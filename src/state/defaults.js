@@ -2,31 +2,31 @@
  * Factory default settings object + factory reset helpers.
  */
 
-import { DEFAULT_STOCK_PROMPTS } from '../../constants.js';
-import { MODULE_NAME } from './schema-sections.js';
-import { DEFAULT_MODULES } from './default-modules.js';
+import { DEFAULT_STOCK_PROMPTS } from "../../constants.js";
+import { MODULE_NAME } from "./schema-sections.js";
+import { DEFAULT_MODULES } from "./default-modules.js";
 import {
-    getDefaultPortraitCharacterSystemPrompt,
-    getDefaultPortraitLocationSystemPrompt,
-    getDefaultPortraitNpcSystemPrompt,
-} from './portrait-prompts.js';
-import { adjustPromptTimestamps } from './router-utils.js';
-import { DEFAULT_MAP_ARCHITECT_SYSTEM_PROMPT } from '../../map-architect-prompt.js';
-import { DEFAULT_MAP_UPDATER_SYSTEM_PROMPT } from '../../map-updater-prompt.js';
-import { DEFAULT_MAP_EVOLUTION_SYSTEM_PROMPT } from '../../map-evolution-prompt.js';
-import { DEFAULT_MAP_EVOLUTION_COMPRESS_SYSTEM_PROMPT } from '../../map-evolution-compress-prompt.js';
-import { DEFAULT_WORLD_PROGRESSION_SYSTEM_PROMPT } from '../../world-progression-prompt.js';
-import { MAIN_SYSPROMPT_BACKUP_KEY } from './main-sysprompt-backup.js';
-import { DEFAULT_MAP_THEME } from './map-themes.js';
+	getDefaultPortraitCharacterSystemPrompt,
+	getDefaultPortraitLocationSystemPrompt,
+	getDefaultPortraitNpcSystemPrompt,
+} from "./portrait-prompts.js";
+import { adjustPromptTimestamps } from "./router-utils.js";
+import { DEFAULT_MAP_ARCHITECT_SYSTEM_PROMPT } from "../../map-architect-prompt.js";
+import { DEFAULT_MAP_UPDATER_SYSTEM_PROMPT } from "../../map-updater-prompt.js";
+import { DEFAULT_MAP_EVOLUTION_SYSTEM_PROMPT } from "../../map-evolution-prompt.js";
+import { DEFAULT_MAP_EVOLUTION_COMPRESS_SYSTEM_PROMPT } from "../../map-evolution-compress-prompt.js";
+import { DEFAULT_WORLD_PROGRESSION_SYSTEM_PROMPT } from "../../world-progression-prompt.js";
+import { MAIN_SYSPROMPT_BACKUP_KEY } from "./main-sysprompt-backup.js";
+import { DEFAULT_MAP_THEME } from "./map-themes.js";
 import {
-    DEFAULT_ROUTER_AUTO_PASS_RESTRICTION,
-    DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_AGENT,
-    DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_BASIC,
-    DEFAULT_ROUTER_EXISTING_NPC_NUDGE,
-    DEFAULT_ROUTER_MANUAL_PASS_RESTRICTION,
-    DEFAULT_ROUTER_REL_SECTION_AGENT,
-    DEFAULT_ROUTER_REL_SECTION_BASIC,
-} from './lorebook-runtime-fragments.js';
+	DEFAULT_ROUTER_AUTO_PASS_RESTRICTION,
+	DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_AGENT,
+	DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_BASIC,
+	DEFAULT_ROUTER_EXISTING_NPC_NUDGE,
+	DEFAULT_ROUTER_MANUAL_PASS_RESTRICTION,
+	DEFAULT_ROUTER_REL_SECTION_AGENT,
+	DEFAULT_ROUTER_REL_SECTION_BASIC,
+} from "./lorebook-runtime-fragments.js";
 
 /**
  * Keep shipped Lorebook prompts compact. Empty spacer lines add no meaning,
@@ -36,13 +36,13 @@ import {
  * @returns {string}
  */
 export function compactLorebookPromptTemplate(template) {
-    return String(template || '')
-        .replace(/\r\n/g, '\n')
-        .split('\n')
-        .map(line => line.trimEnd())
-        .filter(line => line.trim().length > 0)
-        .join('\n')
-        .trim();
+	return String(template || "")
+		.replace(/\r\n/g, "\n")
+		.split("\n")
+		.map((line) => line.trimEnd())
+		.filter((line) => line.trim().length > 0)
+		.join("\n")
+		.trim();
 }
 
 /**
@@ -53,10 +53,10 @@ export function compactLorebookPromptTemplate(template) {
  * @returns {string}
  */
 export function prepareShippedLorebookPromptTemplate(template) {
-    return adjustPromptTimestamps(compactLorebookPromptTemplate(template), {
-        useDdMmYyFormat: false,
-        use24hTime: false,
-    }).replace(/Day X/g, 'Day N');
+	return adjustPromptTimestamps(compactLorebookPromptTemplate(template), {
+		useDdMmYyFormat: false,
+		use24hTime: false,
+	}).replace(/Day X/g, "Day N");
 }
 
 /** Shared procedural naming rule for World Skeleton + NPC/PC Manager creators. */
@@ -77,179 +77,177 @@ Anti-Echo Diversity: Do not rely on default high-frequency placeholder names. Th
  */
 
 export function buildDefaultSettings() {
+	return {
+		currentMemo: "",
 
-    return {
+		/** Resolved combatants retained for display only; never injected into model context. */
+		combatDefeatedUi: [],
 
-        currentMemo: "",
+		prevMemo1: "",
 
-        /** Resolved combatants retained for display only; never injected into model context. */
-        combatDefeatedUi: [],
+		prevMemo2: "",
 
-        prevMemo1: "",
+		memoHistory: [],
+		dungeonMapHistory: [],
 
-        prevMemo2: "",
+		lastDelta: "",
 
-        memoHistory: [],
-        dungeonMapHistory: [],
+		enabled: true,
 
-        lastDelta: "",
+		trackerCollapsed: false,
 
-        enabled: true,
+		/** Integrated panel content: 'tracker' | 'agent' (card-flip mode when docked). */
 
-        trackerCollapsed: false,
+		trackerContentMode: "tracker",
 
-        /** Integrated panel content: 'tracker' | 'agent' (card-flip mode when docked). */
+		agentCollapsed: false,
 
-        trackerContentMode: 'tracker',
+		agentImmersionMode: false,
 
-        agentCollapsed: false,
+		agentKeysCollapsed: false,
 
-        agentImmersionMode: false,
+		agentSettingsOpen: true,
 
-        agentKeysCollapsed: false,
+		agentConsoleOpen: true,
 
-        agentSettingsOpen: true,
+		agentTerminalTab: "lorebook_agent",
 
-        agentConsoleOpen: true,
+		agentModulesOpen: true,
 
-        agentTerminalTab: 'lorebook_agent',
+		agentMapEvolutionOpen: false,
 
-        agentModulesOpen: true,
+		agentWorldOpen: false,
 
-        agentMapEvolutionOpen: false,
+		dayNightCycleEnabled: false,
 
-        agentWorldOpen: false,
+		/** Pin XP above the State Tracker footer instead of rendering its module card. */
 
-        dayNightCycleEnabled: false,
+		xpBarAtBottom: true,
 
-        /** Pin XP above the State Tracker footer instead of rendering its module card. */
+		/** Optional State Tracker panel backdrop (data URL or https URL). */
 
-        xpBarAtBottom: true,
+		panelBgImage: "",
 
-        /** Optional State Tracker panel backdrop (data URL or https URL). */
+		/** Optional night/late-night backdrop for State Tracker; falls back to panelBgImage when empty. */
 
-        panelBgImage: '',
+		panelBgImageNight: "",
 
-        /** Optional night/late-night backdrop for State Tracker; falls back to panelBgImage when empty. */
+		/** 0–100: day/night tint strength over the State Tracker backdrop. */
 
-        panelBgImageNight: '',
+		panelBgOverlayStrength: 55,
 
-        /** 0–100: day/night tint strength over the State Tracker backdrop. */
+		/** Optional detached Lorebook Agent panel backdrop. */
 
-        panelBgOverlayStrength: 55,
+		agentPanelBgImage: "",
 
-        /** Optional detached Lorebook Agent panel backdrop. */
+		/** Optional night/late-night backdrop for detached Lorebook Agent. */
 
-        agentPanelBgImage: '',
+		agentPanelBgImageNight: "",
 
-        /** Optional night/late-night backdrop for detached Lorebook Agent. */
+		/** 0–100: overlay strength for detached Lorebook Agent backdrop. */
 
-        agentPanelBgImageNight: '',
+		agentPanelBgOverlayStrength: 55,
 
-        /** 0–100: overlay strength for detached Lorebook Agent backdrop. */
+		debugMode: false,
 
-        agentPanelBgOverlayStrength: 55,
+		connectionSource: "default",
 
-        debugMode: false,
+		connectionProfileId: "",
 
-        connectionSource: "default",
+		completionPresetId: "",
+		adventureCompanionConnectionSource: "default",
+		adventureCompanionConnectionProfileId: "",
+		adventureCompanionCompletionPresetId: "",
+		adventureCompanionOllamaUrl: "http://localhost:11434",
+		adventureCompanionOllamaModel: "",
+		adventureCompanionOpenaiUrl: "",
+		adventureCompanionOpenaiKey: "",
+		adventureCompanionOpenaiModel: "",
+		adventureCompanionMaxTokens: 0,
+		characterCreationConnectionSource: "default",
+		characterCreationConnectionProfileId: "",
+		characterCreationCompletionPresetId: "",
+		characterCreationOllamaUrl: "http://localhost:11434",
+		characterCreationOllamaModel: "",
+		characterCreationOpenaiUrl: "",
+		characterCreationOpenaiKey: "",
+		characterCreationOpenaiModel: "",
+		renderedViewActive: true,
 
-        connectionProfileId: "",
+		panelLayoutMode: "stack", // 'stack' = classic vertical stack | 'tabs' = compact tab mode (Character/Combat pinned, rest behind tabs)
 
-        completionPresetId: "",
-        adventureCompanionConnectionSource: "default",
-        adventureCompanionConnectionProfileId: "",
-        adventureCompanionCompletionPresetId: "",
-        adventureCompanionOllamaUrl: "http://localhost:11434",
-        adventureCompanionOllamaModel: "",
-        adventureCompanionOpenaiUrl: "",
-        adventureCompanionOpenaiKey: "",
-        adventureCompanionOpenaiModel: "",
-        adventureCompanionMaxTokens: 0,
-        characterCreationConnectionSource: "default",
-        characterCreationConnectionProfileId: "",
-        characterCreationCompletionPresetId: "",
-        characterCreationOllamaUrl: "http://localhost:11434",
-        characterCreationOllamaModel: "",
-        characterCreationOpenaiUrl: "",
-        characterCreationOpenaiKey: "",
-        characterCreationOpenaiModel: "",
-        renderedViewActive: true,
+		// Global, display-only virtual hosts for related tracker modules.
+		// Off by default so existing rendering is byte-for-byte unchanged until opted in.
+		displayGroupsEnabled: false,
+		displayGroupsShowGaps: false,
+		displayGroups: [],
 
-        panelLayoutMode: 'stack',   // 'stack' = classic vertical stack | 'tabs' = compact tab mode (Character/Combat pinned, rest behind tabs)
+		maxTokens: 0,
 
-        // Global, display-only virtual hosts for related tracker modules.
-        // Off by default so existing rendering is byte-for-byte unchanged until opted in.
-        displayGroupsEnabled: false,
-        displayGroupsShowGaps: false,
-        displayGroups: [],
+		fontSize: 14,
 
-        maxTokens: 0,
+		agentFontSize: 13,
 
-        fontSize: 14,
+		/** First-run API checklist. Dismissed overlay does not come back. */
+		apiSetupGateSeen: false,
 
-        agentFontSize: 13,
+		customSysprompt: false,
 
-        /** First-run API checklist. Dismissed overlay does not come back. */
-        apiSetupGateSeen: false,
+		/** When true (default), snapshot Quick Prompt Main before the framework overwrites it and restore on tracker disable. */
 
-        customSysprompt: false,
+		mainSyspromptBackupEnabled: true,
 
-        /** When true (default), snapshot Quick Prompt Main before the framework overwrites it and restore on tracker disable. */
+		stashedMainSysprompt: "",
 
-        mainSyspromptBackupEnabled: true,
+		syspromptStashArmed: false,
 
-        stashedMainSysprompt: '',
+		/** Timestamp of the last durable Main-prompt localStorage backup write. */
 
-        syspromptStashArmed: false,
+		mainSyspromptBackupTs: 0,
 
-        /** Timestamp of the last durable Main-prompt localStorage backup write. */
+		rngEnabled: true,
 
-        mainSyspromptBackupTs: 0,
+		diceFunctionTool: false,
 
-        rngEnabled: true,
+		enablePortraits: true,
 
-        diceFunctionTool: false,
+		portraitsFileStorageVersion: 1,
 
-        enablePortraits: true,
+		/** Migrated to 1 after legacy live portrait maps are assigned to the active chat. */
 
-        portraitsFileStorageVersion: 1,
+		portraitChatScopeVersion: 0,
 
-        /** Migrated to 1 after legacy live portrait maps are assigned to the active chat. */
+		portraitGeneratorSource: "native",
 
-        portraitChatScopeVersion: 0,
+		portraitSkipPromptDialog: false,
 
-        portraitGeneratorSource: "native",
+		/** When true, suppress info/success toasts from portrait/location AI auto-generation (errors still show). */
 
-        portraitSkipPromptDialog: false,
+		hideImageGenToasts: false,
 
-        /** When true, suppress info/success toasts from portrait/location AI auto-generation (errors still show). */
+		/** When true, portrait prompts include recent chat story context; when false, only NPC/PC card data. */
 
-        hideImageGenToasts: false,
+		portraitUseStoryLookback: false,
 
-        /** When true, portrait prompts include recent chat story context; when false, only NPC/PC card data. */
+		/** Recent chat messages to include when portraitUseStoryLookback is on (character path previously used 5). */
 
-        portraitUseStoryLookback: false,
+		portraitStoryLookback: 5,
 
-        /** Recent chat messages to include when portraitUseStoryLookback is on (character path previously used 5). */
+		portraitAutoGenerateParty: false,
 
-        portraitStoryLookback: 5,
+		portraitAutoGeneratePlayer: false,
 
-        portraitAutoGenerateParty: false,
+		portraitAutoGenerateEnemies: false,
 
-        portraitAutoGeneratePlayer: false,
+		portraitAutoGenerateNpcs: false,
 
-        portraitAutoGenerateEnemies: false,
+		portraitAutoGenerateLocations: false,
 
-        portraitAutoGenerateNpcs: false,
+		/** Real-Time Mode: generate location images only on Scene View arrival (mutually exclusive with portraitAutoGenerateLocations). */
 
-        portraitAutoGenerateLocations: false,
+		portraitAutoGenerateSceneView: false,
 
-        /** Real-Time Mode: generate location images only on Scene View arrival (mutually exclusive with portraitAutoGenerateLocations). */
-
-        portraitAutoGenerateSceneView: false,
-
-        /**
+		/**
 
          * Real-Time scene-art trigger:
 
@@ -261,134 +259,155 @@ export function buildDefaultSettings() {
 
          */
 
-        portraitRealtimeTriggerMode: 'location_change',
+		portraitRealtimeTriggerMode: "location_change",
 
-        /** Used when portraitRealtimeTriggerMode === 'every_n_outputs' (min 1). */
+		/** Used when portraitRealtimeTriggerMode === 'every_n_outputs' (min 1). */
 
-        portraitRealtimeEveryNOutputs: 1,
+		portraitRealtimeEveryNOutputs: 1,
 
-        portraitRegenerateVisitedLocations: false,
+		portraitRegenerateVisitedLocations: false,
 
-        portraitLocationIncludePresentNpcs: false,
+		portraitLocationIncludePresentNpcs: false,
 
-        pollinationsApiKey: "",
+		pollinationsApiKey: "",
 
-        pollinationsModel: "zimage",
+		pollinationsModel: "zimage",
 
-        inventoryWorthMode: "hover",   // 'hover' = worth shown as tooltip only | 'display' = coin badge shown inline
+		/** Optional — anonymous key "0000000000" is used when blank (lower priority/slower queue). */
+		hordeApiKey: "",
 
-        npcCoreSections: [],
+		/** Blank = let the AI Horde pick any available model. */
+		hordeModel: "",
 
-        pcCoreSections: [],
+		/** er_sde is the AI Horde's standard turbo/distilled-safe sampler name — the server injects its own incompatible 'k_euler_a' default when this is omitted, so always send an explicit value. */
+		hordeSampler: "er_sde",
 
-        npcSectionPresets: {},
+		/** Anima is a turbo/distilled baseline — its official test fixture uses only 8 steps. */
+		hordeSteps: 8,
 
-        pcSectionPresets: {},
+		/** Anima's official test fixture uses cfg_scale 1.0 (typical of turbo/distilled models); regular SD1.5/SDXL models want ~7.5. */
+		hordeCfgScale: 1,
 
-        npcMajorWords: 225,
+		/** Matches Anima's native_resolution (1024) per the AI Horde baseline catalog. */
+		hordeWidth: 1024,
 
-        npcMinorWords: 135,
+		hordeHeight: 1024,
 
-        npcRelationshipMaxDefault: 150,
+		/** AI Horde's central validation rejected 'normal' with SchedulerMismatch; Anima shares Qwen-Image's pipeline family, whose published requirements restrict schedulers to 'simple'. */
+		hordeScheduler: "simple",
 
-        npcRelationshipMax: 150,
+		inventoryWorthMode: "hover", // 'hover' = worth shown as tooltip only | 'display' = coin badge shown inline
 
-        npcPortraits: true,
+		npcCoreSections: [],
 
-        locationImages: false,
+		pcCoreSections: [],
 
-        npcRelationshipBars: false,
-        npcRelationshipUpdateMode: 'state_tracker',
-        // Optional editable instruction for State Tracker relationship commands.
-        // Blank uses the built-in prompt.
-        npcRelationshipStateTrackerPrompt: '',
-        npcRelationshipToast: true,
-        stateTrackerSwipeRollback: true,        // auto-roll back State Tracker memo on swipe           // emit toast notification when relationship values change
+		npcSectionPresets: {},
 
-        npcRelationshipValues: {},
+		pcSectionPresets: {},
 
-        npcRelationshipLog: {},      // { [fullId]: [{timestamp,field,delta,newValue,source}] } — capped 50/NPC
+		npcMajorWords: 225,
 
-        experimentalNpcImport: true,
+		npcMinorWords: 135,
 
-        ignoreNpcImportLimits: true,
+		npcRelationshipMaxDefault: 150,
 
-        npcAddAsIsMode: 'ai_review',   // 'literal' = wrap card verbatim in [CORE]; 'ai_review' = minimal world/era fix before adding
+		npcRelationshipMax: 150,
 
-        use24hTime: false,
+		npcPortraits: true,
 
-        useDdMmYyFormat: false,
+		locationImages: false,
 
-        initialDate: "Day 1",
+		npcRelationshipBars: false,
+		npcRelationshipUpdateMode: "state_tracker",
+		// Optional editable instruction for State Tracker relationship commands.
+		// Blank uses the built-in prompt.
+		npcRelationshipStateTrackerPrompt: "",
+		npcRelationshipToast: true,
+		stateTrackerSwipeRollback: true, // auto-roll back State Tracker memo on swipe           // emit toast notification when relationship values change
 
-        /** Initial time of day for a new campaign's first [TIME] block (matches use24hTime format). */
-        initialTime: "08:00 AM",
+		npcRelationshipValues: {},
 
-        onboardingGenre: "fantasy",
+		npcRelationshipLog: {}, // { [fullId]: [{timestamp,field,delta,newValue,source}] } — capped 50/NPC
 
-        /** Starting level for character creation (1–20), or "none" for systems without numeric levels. */
-        onboardingLevel: 1,
+		experimentalNpcImport: true,
 
-        onboardingGearTier: "auto",
+		ignoreNpcImportLimits: true,
 
-        /** When false, the Character Creator omits the classic d20/BAB-style combat
-         *  & skill scaling guide from generation prompts — for custom/homebrew systems. */
-        onboardingUseCombatScalingGuide: true,
+		npcAddAsIsMode: "ai_review", // 'literal' = wrap card verbatim in [CORE]; 'ai_review' = minimal world/era fix before adding
 
-        /** When true, the State Model's Core Prompt is fully replaced by
-         *  FULL_REVIEW_STATE_SYSTEM_PROMPT (below) every pass — forcing a complete,
-         *  from-scratch verified state dump for every enabled module instead of a
-         *  delta ("only output changed sections") update. Trades tokens/latency for
-         *  reliability on weaker models that struggle with delta/BLOCK PERSISTENCE
-         *  tracking. Any custom Core Prompt edits are ignored while this is on. */
-        fullReviewStateMode: false,
+		use24hTime: false,
 
-        onboardingCustomInstructions: "",
+		useDdMmYyFormat: false,
 
-        /** Legacy key retained as the Player Card toggle preference. */
-        onboardingCreatePersona: false,
-        /** Create/select a name-only SillyTavern persona for the chat sender label. */
-        onboardingCreateSillyTavernPersona: true,
-        onboardingPersonaWords: "150",
+		initialDate: "Day 1",
 
-        onboardingPersonaWordsCustom: "",
+		/** Initial time of day for a new campaign's first [TIME] block (matches use24hTime format). */
+		initialTime: "08:00 AM",
 
-        /** Instant Action: when true, auto-send "Begin the adventure" after the character is ready. On by default; uncheck to type your own first action. */
-        onboardingSendStarterMessage: true,
+		onboardingGenre: "fantasy",
 
-        /** Instant Action: when true, roll a starting level from 1–10. Off by default so new characters start at Level 1 with 0 XP. */
-        onboardingInstantActionRandomLevel: false,
+		/** Starting level for character creation (1–20), or "none" for systems without numeric levels. */
+		onboardingLevel: 1,
 
-        /** Last Character Creator form values, saved when Generate Character is pressed. */
+		onboardingGearTier: "auto",
 
-        characterCreatorDraft: null,
+		/** When false, the Character Creator omits the classic d20/BAB-style combat
+		 *  & skill scaling guide from generation prompts — for custom/homebrew systems. */
+		onboardingUseCombatScalingGuide: true,
 
-        /** True while the Character Creator inline panel is open on the onboarding screen. */
+		/** When true, the State Model's Core Prompt is fully replaced by
+		 *  FULL_REVIEW_STATE_SYSTEM_PROMPT (below) every pass — forcing a complete,
+		 *  from-scratch verified state dump for every enabled module instead of a
+		 *  delta ("only output changed sections") update. Trades tokens/latency for
+		 *  reliability on weaker models that struggle with delta/BLOCK PERSISTENCE
+		 *  tracking. Any custom Core Prompt edits are ignored while this is on. */
+		fullReviewStateMode: false,
 
-        characterCreatorPanelOpen: false,
+		onboardingCustomInstructions: "",
 
-        barColors: {},
+		/** Legacy key retained as the Player Card toggle preference. */
+		onboardingCreatePersona: false,
+		/** Create/select a name-only SillyTavern persona for the chat sender label. */
+		onboardingCreateSillyTavernPersona: true,
+		onboardingPersonaWords: "150",
 
-        animateAllCustomBarChanges: true,
+		onboardingPersonaWordsCustom: "",
 
-        modulePageSizes: {},
+		/** Instant Action: when true, auto-send "Begin the adventure" after the character is ready. On by default; uncheck to type your own first action. */
+		onboardingSendStarterMessage: true,
 
-        customTheme: null,
+		/** Instant Action: when true, roll a starting level from 1–10. Off by default so new characters start at Level 1 with 0 XP. */
+		onboardingInstantActionRandomLevel: false,
 
-        savedThemes: {},
+		/** Last Character Creator form values, saved when Generate Character is pressed. */
 
-        /**
-         * Global reusable NPC templates (CORE text + optional portrait path).
-         * Not chat-linked. Shape: { id, name, keys, content, portraitPath, notes, createdAt, updatedAt }.
-         */
-        npcLibrary: [],
+		characterCreatorDraft: null,
 
-        /** Locked chrome for the floating settings window: 'dark' | 'light'. Independent of tracker/ST theme. */
-        settingsOverlayAppearance: 'light',
+		/** True while the Character Creator inline panel is open on the onboarding screen. */
 
-        systemPromptTemplate:
+		characterCreatorPanelOpen: false,
 
-            `You are the State Extractor Model. Your task is to maintain a structured State Memo based on the roleplay narrative.
+		barColors: {},
+
+		animateAllCustomBarChanges: true,
+
+		modulePageSizes: {},
+
+		customTheme: null,
+
+		savedThemes: {},
+
+		/**
+		 * Global reusable NPC templates (CORE text + optional portrait path).
+		 * Not chat-linked. Shape: { id, name, keys, content, portraitPath, notes, createdAt, updatedAt }.
+		 */
+		npcLibrary: [],
+
+		/** Locked chrome for the floating settings window: 'dark' | 'light'. Independent of tracker/ST theme. */
+		settingsOverlayAppearance: "light",
+
+		systemPromptTemplate: `You are the State Extractor Model. Your task is to maintain a structured State Memo based on the roleplay narrative.
 <core_directives>
 IGNORE NARRATIVE FLUFF: Do not track temporary dialogue or actions. Only track persistent state changes.
 INTEGRATION: Track all durations stated by the narrative (e.g. 'poisoned for 3 turns'). Decrement by 1 each round in [COMBAT]. For out-of-combat/time-based durations, calculate the delta between the current [TIME] and the [TIME] in the PRIOR MEMO.
@@ -433,37 +452,35 @@ Update abilities/attributes/HP/etc accordingly, such as an ability's 1d6 bonus i
 You may be asked to use Markers: ((PLS)), ((B)), ((XB)), ((BDG)), ((HGT)). These are for graphical rendering options; use them if instructed but only if instructed in a specific [MODULE].
 </custom_formatting>`,
 
-        modules: {
+		modules: {
+			character: true,
 
-            character: true,
+			party: true,
 
-            party: true,
+			"benched party": true,
 
-            'benched party': true,
+			combat: true,
 
-            combat: true,
+			inventory: true,
 
-            inventory: true,
+			abilities: true,
 
-            abilities: true,
+			spells: true,
 
-            spells: true,
+			time: true,
 
-            time: true,
+			xp: true,
 
-            xp: true,
+			quests: true,
+		},
 
-            quests: true,
+		stockPrompts: { ...DEFAULT_STOCK_PROMPTS },
 
-        },
+		customFields: [],
 
-        stockPrompts: { ...DEFAULT_STOCK_PROMPTS },
+		customSyspromptLibrary: [],
 
-        customFields: [],
-
-        customSyspromptLibrary: [],
-
-        /**
+		/**
 
          * System Prompt Control Room — explicit render order for every top-level
 
@@ -481,9 +498,9 @@ You may be asked to use Markers: ((PLS)), ((B)), ((XB)), ((BDG)), ((HGT)). These
 
          */
 
-        syspromptSectionOrder: [],
+		syspromptSectionOrder: [],
 
-        /**
+		/**
 
          * Game System Wizard bundles — link a customSyspromptLibrary entry and/or a
 
@@ -517,9 +534,9 @@ You may be asked to use Markers: ((PLS)), ((B)), ((XB)), ((BDG)), ((HGT)). These
 
          */
 
-        gameSystems: [],
+		gameSystems: [],
 
-        /**
+		/**
 
          * Game Cartridges — named, exportable/importable snapshots of the entire
 
@@ -535,321 +552,322 @@ You may be asked to use Markers: ((PLS)), ((B)), ((XB)), ((BDG)), ((HGT)). These
 
          */
 
-        gameCartridges: [],
+		gameCartridges: [],
 
-        profiles: {},
+		profiles: {},
 
-        activeProfile: "",
+		activeProfile: "",
 
-        fullViewSections: [],
+		fullViewSections: [],
 
-        blockOrder: ['COMBAT', 'CHARACTER', 'PARTY', 'INVENTORY', 'ABILITIES', 'SPELLS', 'XP', 'TIME'],
+		blockOrder: [
+			"COMBAT",
+			"CHARACTER",
+			"PARTY",
+			"INVENTORY",
+			"ABILITIES",
+			"SPELLS",
+			"XP",
+			"TIME",
+		],
 
-        legacyDiceNaming: false,
+		legacyDiceNaming: false,
 
-        diceD100Mode: false,
+		diceD100Mode: false,
 
-        rngToolD20: false,
+		rngToolD20: false,
 
-        rngToolD100: false,
+		rngToolD100: false,
 
-        rngQueueD20: true,
+		rngQueueD20: true,
 
-        rngQueueD100: false,
+		rngQueueD100: false,
 
-        closeCount: 0,
+		closeCount: 0,
 
-        lookbackMessages: 2,
+		lookbackMessages: 2,
 
-        directPromptContext: 5,
+		directPromptContext: 5,
 
-        stateTrackerDirectPrompt: '',
+		stateTrackerDirectPrompt: "",
 
-        historyIndex: -1,
+		historyIndex: -1,
 
-        fullAuditMaxTokens: 32000,
+		fullAuditMaxTokens: 32000,
 
-        stateTrackerRunEvery: 1,
+		stateTrackerRunEvery: 1,
 
-        ctxWorldInfo: false,
+		ctxWorldInfo: false,
 
-        lorebookFilter: [],
+		lorebookFilter: [],
 
-        ollamaUrl: "http://localhost:11434",
+		ollamaUrl: "http://localhost:11434",
 
-        ollamaModel: "",
+		ollamaModel: "",
 
-        openaiUrl: "",
+		openaiUrl: "",
 
-        openaiKey: "",
+		openaiKey: "",
 
-        openaiModel: "",
+		openaiModel: "",
 
-        openaiMaxTokens: 0,
+		openaiMaxTokens: 0,
 
-        chatLinkEnabled: true,
-        // Identity of the chat whose linked story state is currently projected
-        // into the top-level settings fields. This is persistence provenance,
-        // not a user-facing preference.
-        chatStateProjectionOwner: '',
+		chatLinkEnabled: true,
+		// Identity of the chat whose linked story state is currently projected
+		// into the top-level settings fields. This is persistence provenance,
+		// not a user-facing preference.
+		chatStateProjectionOwner: "",
 
-        /** Also bind Control Room sections and State Tracker module configuration to each chat. */
-        chatSetupLinkEnabled: true,
+		/** Also bind Control Room sections and State Tracker module configuration to each chat. */
+		chatSetupLinkEnabled: true,
 
-        /** Global definition catalogs; chats store only activation state and ordering. */
-        chatSetupCatalogVersion: 0,
-        trackerModuleDatabase: [],
-        syspromptSnippetDatabase: [],
-        gameSystemDatabase: [],
-        chatStates: {},
-        quests: [],
+		/** Global definition catalogs; chats store only activation state and ordering. */
+		chatSetupCatalogVersion: 0,
+		trackerModuleDatabase: [],
+		syspromptSnippetDatabase: [],
+		gameSystemDatabase: [],
+		chatStates: {},
+		quests: [],
 
-        /** Narrator <narrative> pacing mode: normal | shorter_outputs | high_agency | downtime. */
-        narrativePacing: 'normal',
+		/** Narrator <narrative> pacing mode: normal | shorter_outputs | high_agency | downtime. */
+		narrativePacing: "normal",
 
-        syspromptModules: {
+		syspromptModules: {
+			loot: true,
 
-            loot: true,
+			random_events: true,
 
-            random_events: true,
+			resting: true,
 
-            resting: true,
+			party_bench: true,
 
-            party_bench: true,
+			quests: true,
 
-            quests: true,
+			questsDeadlines: true,
+			questsFrustration: true,
+			questsShowArchive: true,
 
-            questsDeadlines: true,
-            questsFrustration: true,
-            questsShowArchive: true,
+			CYOA_mode: true,
 
-            CYOA_mode: true,
+			dungeon_reality_and_hidden_mapping: true,
+		},
 
-            dungeon_reality_and_hidden_mapping: true,
+		cyoaConfig: {
+			useCustomPrompt: false,
 
-        },
+			customPromptText: "",
 
-        cyoaConfig: {
+			slots: [
+				{ type: "narrative" },
 
-            useCustomPrompt: false,
+				{ type: "narrative" },
 
-            customPromptText: '',
+				{ type: "narrative" },
 
-            slots: [
+				{ type: "narrative" },
 
-                { type: 'narrative' },
+				{ type: "narrative" },
+			],
 
-                { type: 'narrative' },
+			presets: {},
 
-                { type: 'narrative' },
+			useEmojis: true,
 
-                { type: 'narrative' },
+			useXmlTag: true,
 
-                { type: 'narrative' },
+			useButtonTags: true,
 
-            ],
+			stripOldChoicesFromPrompt: true,
 
-            presets: {},
+			buttonColor: "#120a28",
 
-            useEmojis: true,
+			buttonOpacity: 0.9,
 
-            useXmlTag: true,
+			buttonTextColor: "",
 
-            useButtonTags: true,
+			buttonBorderColor: "",
 
-            stripOldChoicesFromPrompt: true,
+			choiceAccentColor: "",
 
-            buttonColor: '#120a28',
+			mechColor: "#ffc966",
 
-            buttonOpacity: 0.9,
+			mechBgOpacity: 0.14,
 
-            buttonTextColor: '',
+			dcColor: "#ff9f6b",
 
-            buttonBorderColor: '',
+			modColor: "#9fd4ff",
 
-            choiceAccentColor: '',
+			tagColor: "#c9b0ff",
 
-            mechColor: '#ffc966',
+			mechAccentColor: "",
+		},
 
-            mechBgOpacity: 0.14,
+		routerEnabled: true,
 
-            dcColor: '#ff9f6b',
+		routerLog: [],
 
-            modColor: '#9fd4ff',
+		activeRouterKeys: [],
 
-            tagColor: '#c9b0ff',
+		activeWorldKeys: [],
 
-            mechAccentColor: '',
+		pinnedRouterKeys: [], // entries permanently activated by the user — immune to agent/keyword deactivation
 
-        },
+		keywordActivatedKeys: [], // entries activated by keyword scanner — auto-expire when keyword leaves scan window
 
-        routerEnabled: true,
+		// One-shot per chat: first Lorebook Agent pass may inject the PC [CHARACTER] block
+		// as cold-start gear/equipment ground truth. Flipped true after that first pass.
+		pcCharacterBlockSeeded: false,
 
-        routerLog: [],
+		routerConnectionSource: "default",
 
-        activeRouterKeys: [],
+		routerOpenaiUrl: "",
 
-        activeWorldKeys: [],
+		routerOpenaiKey: "",
 
-        pinnedRouterKeys: [],  // entries permanently activated by the user — immune to agent/keyword deactivation
+		routerOpenaiModel: "",
 
-        keywordActivatedKeys: [],  // entries activated by keyword scanner — auto-expire when keyword leaves scan window
+		routerOllamaUrl: "http://localhost:11434",
 
-        // One-shot per chat: first Lorebook Agent pass may inject the PC [CHARACTER] block
-        // as cold-start gear/equipment ground truth. Flipped true after that first pass.
-        pcCharacterBlockSeeded: false,
+		routerOllamaModel: "",
 
-        routerConnectionSource: "default",
+		routerConnectionProfileId: "",
 
-        routerOpenaiUrl: "",
+		routerCompletionPresetId: "",
 
-        routerOpenaiKey: "",
+		routerMaxTokens: 0,
 
-        routerOpenaiModel: "",
+		routerMaxTurns: 5,
 
-        routerOllamaUrl: "http://localhost:11434",
+		routerMaxActivations: 12,
 
-        routerOllamaModel: "",
+		routerMaxKeywordOverflow: 6, // 0 = unlimited; N = max extra keyword-activated entries above routerMaxActivations
 
-        routerConnectionProfileId: "",
+		routerCampaignPrefix: "",
 
-        routerCompletionPresetId: "",
+		routerDefaultPosition: 4, // Default to 4 (at Depth) for prompt caching protection
 
-        routerMaxTokens: 0,
+		routerDefaultDepth: 4,
 
-        routerMaxTurns: 5,
+		routerDefaultOrder: 100,
 
-        routerMaxActivations: 12,
+		routerDefaultRole: 0, // 0 = System, 1 = User, 2 = AI
 
-        routerMaxKeywordOverflow: 6,   // 0 = unlimited; N = max extra keyword-activated entries above routerMaxActivations
+		loreInjectionPosition: 4,
 
-        routerCampaignPrefix: "",
+		loreInjectionDepth: 4,
 
-        routerDefaultPosition: 4,      // Default to 4 (at Depth) for prompt caching protection
+		loreInjectionRole: 0,
 
-        routerDefaultDepth: 4,
+		routerCampaignPrefixOverride: "",
 
-        routerDefaultOrder: 100,
+		/**
+		 * ST chat id for which `routerCampaignPrefixOverride` applies.
+		 * Empty = legacy (override only when chatId === active ctx chat id).
+		 * Set whenever the override field is edited so Branch Campaign / rename
+		 * cannot keep writing into another chat's lorebook stack.
+		 */
+		routerCampaignPrefixOverrideAnchorChatId: "",
 
-        routerDefaultRole: 0,          // 0 = System, 1 = User, 2 = AI
+		routerLookback: 4,
 
-        loreInjectionPosition: 4,
+		routerDirectLookback: 10,
 
-        loreInjectionDepth: 4,
+		routerDirectPrompt: "",
 
-        loreInjectionRole: 0,
+		routerBasicMode: false,
 
-        routerCampaignPrefixOverride: "",
+		routerNativeKeywordActivation: false,
 
-        /**
-         * ST chat id for which `routerCampaignPrefixOverride` applies.
-         * Empty = legacy (override only when chatId === active ctx chat id).
-         * Set whenever the override field is edited so Branch Campaign / rename
-         * cannot keep writing into another chat's lorebook stack.
-         */
-        routerCampaignPrefixOverrideAnchorChatId: "",
+		routerPaused: false,
 
-        routerLookback: 4,
+		routerRunEvery: 3,
 
-        routerDirectLookback: 10,
+		routerIncludeHidden: false,
 
-        routerDirectPrompt: "",
+		routerSwipeRollback: true, // undo lorebook pass when swiping away from the generation that triggered it
 
-        routerBasicMode: false,
+		routerLookbackSinceLastRun: true, // default: capture all messages since the last agent run
 
-        routerNativeKeywordActivation: false,
+		routerLookbackSinceLastUser: false, // alternative: capture since last user message
 
-        routerPaused: false,
+		routerLastRunChatLength: 0, // watermark: chat.length when the agent last ran (indexing only, not shown to user)
 
-        routerRunEvery: 3,
+		routerLastRunAt: 0, // epoch ms: when the agent last completed a pass (for display)
 
-        routerIncludeHidden: false,
+		routerWatermarkBaselinePending: false, // one-shot: baseline watermark after lookback fix upgrade
 
-        routerSwipeRollback: true,   // undo lorebook pass when swiping away from the generation that triggered it
+		routerUndockHintShown: false,
 
-        routerLookbackSinceLastRun: true,   // default: capture all messages since the last agent run
+		routerPromptForPrefix: false,
 
-        routerLookbackSinceLastUser: false,  // alternative: capture since last user message
+		routerModules: JSON.parse(JSON.stringify(DEFAULT_MODULES)),
 
-        routerLastRunChatLength: 0,          // watermark: chat.length when the agent last ran (indexing only, not shown to user)
+		routerCustomTags: [],
 
-        routerLastRunAt: 0,                   // epoch ms: when the agent last completed a pass (for display)
+		routerHistory: [],
 
-        routerWatermarkBaselinePending: false, // one-shot: baseline watermark after lookback fix upgrade
+		routerCleanupTokenThreshold: 300,
 
-        routerUndockHintShown: false,
+		routerCleanupEvery: 0,
 
-        routerPromptForPrefix: false,
+		routerCleanupUseThreshold: true,
 
-        routerModules: JSON.parse(JSON.stringify(DEFAULT_MODULES)),
+		// ── World Progression (deterministic, standalone pass) ────────────────────
 
-        routerCustomTags: [],
+		worldProgressionEnabled: false, // master toggle
 
-        routerHistory: [],
+		worldProgressionIntervalHours: 24, // fire every X in-world hours (24 = daily)
 
-        routerCleanupTokenThreshold: 300,
+		worldProgressionKeepActive: 1, // rolling window of active reports
 
-        routerCleanupEvery: 0,
+		worldProgressionLookback: 20, // number of recent chat messages to include (0 = disabled)
 
-        routerCleanupUseThreshold: true,
+		worldProgressionHistoryLookback: 0, // number of historical reports to incorporate (0 = include all)
 
-        // ── World Progression (deterministic, standalone pass) ────────────────────
+		worldProgressionInjectionPosition: 4, // Default to 4 (at Depth)
 
-        worldProgressionEnabled: false,           // master toggle
+		worldProgressionInjectionDepth: 3,
 
-        worldProgressionIntervalHours: 24,        // fire every X in-world hours (24 = daily)
+		worldProgressionInjectionRole: 0, // System
 
-        worldProgressionKeepActive: 1,            // rolling window of active reports
+		worldProgressionLocationsPerReport: 3, // oldest-unadvanced location dossiers per report
 
-        worldProgressionLookback: 20,             // number of recent chat messages to include (0 = disabled)
+		worldProgressionLocationRandomize: true, // randomize only equally-old rotation cohorts
 
-        worldProgressionHistoryLookback: 0,       // number of historical reports to incorporate (0 = include all)
+		worldProgressionLocationLastAdvanced: {}, // per-location macro simulation watermark
 
-        worldProgressionInjectionPosition: 4,     // Default to 4 (at Depth)
+		worldProgressionSkeletonFactions: 4, // number of factions in skeleton
 
-        worldProgressionInjectionDepth: 3,
+		worldProgressionSkeletonLocations: 4, // number of locations in skeleton
 
-        worldProgressionInjectionRole: 0,         // System
+		worldProgressionSkeletonConflicts: 3, // number of conflicts in skeleton
 
-        worldProgressionLocationsPerReport: 3,   // oldest-unadvanced location dossiers per report
+		worldProgressionLastFiredAtMinutes: -1, // last in-world total-minutes at which a report fired
 
-        worldProgressionLocationRandomize: true, // randomize only equally-old rotation cohorts
+		worldProgressionLastFiredPeriodLabel: "", // label of the last generated period entry
 
-        worldProgressionLocationLastAdvanced: {}, // per-location macro simulation watermark
+		worldProgressionConsolidateEnabled: false, // auto-compress backlog when threshold is hit
 
-        worldProgressionSkeletonFactions: 4,       // number of factions in skeleton
+		worldProgressionConsolidateInterval: 7, // number of raw reports before consolidation fires
 
-        worldProgressionSkeletonLocations: 4,      // number of locations in skeleton
+		worldProgressionSystemPrompt: DEFAULT_WORLD_PROGRESSION_SYSTEM_PROMPT,
 
-        worldProgressionSkeletonConflicts: 3,      // number of conflicts in skeleton
+		worldProgressionSkeletonAtmosphereSummary: "", // freeform Skeleton Source (legacy key retained for compatibility)
 
-        worldProgressionLastFiredAtMinutes: -1,   // last in-world total-minutes at which a report fired
+		worldProgressionSkeletonAtmosphereLookback: 30, // messages lookback count for atmosphere generation
 
-        worldProgressionLastFiredPeriodLabel: '', // label of the last generated period entry
+		worldProgressionSkeletonUseExisting: true, // toggle to feed existing entries context when appending
 
-        worldProgressionConsolidateEnabled: false,         // auto-compress backlog when threshold is hit
+		worldProgressionSkeletonUseLorebooks: false, // feed selected existing lorebooks into skeleton generation
 
-        worldProgressionConsolidateInterval: 7,            // number of raw reports before consolidation fires
+		worldProgressionSkeletonLorebookFilter: [], // selected source lorebooks; empty means all non-skeleton books
 
-        worldProgressionSystemPrompt: DEFAULT_WORLD_PROGRESSION_SYSTEM_PROMPT,
+		worldProgressionSkeletonLorebookOnly: false, // never extrapolate beyond explicitly mentioned source entities
 
-        worldProgressionSkeletonAtmosphereSummary: '', // freeform Skeleton Source (legacy key retained for compatibility)
+		worldProgressionExclusionList: "", // comma-separated location titles or keys excluded from rotation
 
-        worldProgressionSkeletonAtmosphereLookback: 30, // messages lookback count for atmosphere generation
-
-        worldProgressionSkeletonUseExisting: true, // toggle to feed existing entries context when appending
-
-        worldProgressionSkeletonUseLorebooks: false, // feed selected existing lorebooks into skeleton generation
-
-        worldProgressionSkeletonLorebookFilter: [], // selected source lorebooks; empty means all non-skeleton books
-
-        worldProgressionSkeletonLorebookOnly: false, // never extrapolate beyond explicitly mentioned source entities
-
-        worldProgressionExclusionList: '',         // comma-separated location titles or keys excluded from rotation
-
-
-
-        worldProgressionSkeletonSystemPrompt: `You are a World Architect. Given world source material, generate a sparse foundational skeleton for an RPG campaign simulation.
+		worldProgressionSkeletonSystemPrompt: `You are a World Architect. Given world source material, generate a sparse foundational skeleton for an RPG campaign simulation.
 
 ## OUTPUT FORMAT — MANDATORY
 Use exactly one section header followed by one level-three heading per premise:
@@ -875,8 +893,8 @@ Generate exactly {factionCount} factions, {locationCount} locations, and {confli
 - Keep every premise consistent with the provided source material. Named individuals may constrain the result but must never become skeleton entries.
 - Maximum two sentences per premise. Output only the structured content.`,
 
-
-        routerSystemPromptTemplate: prepareShippedLorebookPromptTemplate(`<basic_instructions>
+		routerSystemPromptTemplate:
+			prepareShippedLorebookPromptTemplate(`<basic_instructions>
 
 You are the Researcher Agent, a specialized Dungeon Master's Assistant. Your role is to architect the AI Narrator's memory — keeping the Active Context saturated with the most relevant lore at all times.
 
@@ -1072,7 +1090,7 @@ Don't be afraid to hit the budget exactly. It's better to lean towards activatin
 
 </bravery>`),
 
-        routerModularPromptTemplate: prepareShippedLorebookPromptTemplate(`## FORMAT
+		routerModularPromptTemplate: prepareShippedLorebookPromptTemplate(`## FORMAT
 
 Use these tags in your response:
 
@@ -1120,10 +1138,11 @@ Example: [[FAC: Iron Syndicate | ...]]  NOT  [[FAC: Khelt :: Iron Syndicate | ..
 
 **FAC** uses four fields: \`Name | Status | Description | Keywords\`. Put a concise current-state line in **Status** (standing, conflicts, recent changes); put history, ideology, schemes, and members in **Description** (wrapped in \`[CORE] ... [/CORE]\`).`),
 
-        // ── Basic Mode system prompt template ─────────────────────────────────
-        // Editable Basic Mode base template. {{modularPrompt}} is expanded from
-        // routerModularPromptTemplate for each request without mutating either source.
-        routerBasicSystemPromptTemplate: prepareShippedLorebookPromptTemplate(`You are the Research Assistant. Your task is to identify and record important narrative entities and events.
+		// ── Basic Mode system prompt template ─────────────────────────────────
+		// Editable Basic Mode base template. {{modularPrompt}} is expanded from
+		// routerModularPromptTemplate for each request without mutating either source.
+		routerBasicSystemPromptTemplate:
+			prepareShippedLorebookPromptTemplate(`You are the Research Assistant. Your task is to identify and record important narrative entities and events.
 
 {{modularPrompt}}
 
@@ -1184,9 +1203,9 @@ Before outputting [[NPC:...]], [[LOC:...]], [[FAC:...]], etc. for anyone or anyt
 7. Output your thoughts first, then the tags.
 `),
 
-        // ── Agent Mode shared context template ────────────────────────────────
-        // The complete context appended to the agent instructions in Agent Mode.
-        routerAgentSharedContextTemplate: prepareShippedLorebookPromptTemplate(`
+		// ── Agent Mode shared context template ────────────────────────────────
+		// The complete context appended to the agent instructions in Agent Mode.
+		routerAgentSharedContextTemplate: prepareShippedLorebookPromptTemplate(`
 ## MEMORY LIMIT
 Maximum Active Entities: **{{maxActivations}}**.
 - Entries you record are ACTIVATED AUTOMATICALLY. Do NOT also include them in activate.
@@ -1250,266 +1269,280 @@ Include the entity name/title itself (without timestamps like "[Day 1]") as a ke
 ## FIELD INSTRUCTIONS
 {{fieldInstructions}}`),
 
-        // Editable runtime fragments injected into Basic/Agent templates at request time.
-        routerCombatProfileGuidanceBasicTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_BASIC),
-        routerCombatProfileGuidanceAgentTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_AGENT),
-        routerAutoPassRestrictionTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_AUTO_PASS_RESTRICTION),
-        routerManualPassRestrictionTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_MANUAL_PASS_RESTRICTION),
-        routerExistingNpcNudgeTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_EXISTING_NPC_NUDGE),
-        routerRelSectionBasicTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_REL_SECTION_BASIC),
-        routerRelSectionAgentTemplate: prepareShippedLorebookPromptTemplate(DEFAULT_ROUTER_REL_SECTION_AGENT),
+		// Editable runtime fragments injected into Basic/Agent templates at request time.
+		routerCombatProfileGuidanceBasicTemplate:
+			prepareShippedLorebookPromptTemplate(
+				DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_BASIC,
+			),
+		routerCombatProfileGuidanceAgentTemplate:
+			prepareShippedLorebookPromptTemplate(
+				DEFAULT_ROUTER_COMBAT_PROFILE_GUIDANCE_AGENT,
+			),
+		routerAutoPassRestrictionTemplate: prepareShippedLorebookPromptTemplate(
+			DEFAULT_ROUTER_AUTO_PASS_RESTRICTION,
+		),
+		routerManualPassRestrictionTemplate: prepareShippedLorebookPromptTemplate(
+			DEFAULT_ROUTER_MANUAL_PASS_RESTRICTION,
+		),
+		routerExistingNpcNudgeTemplate: prepareShippedLorebookPromptTemplate(
+			DEFAULT_ROUTER_EXISTING_NPC_NUDGE,
+		),
+		routerRelSectionBasicTemplate: prepareShippedLorebookPromptTemplate(
+			DEFAULT_ROUTER_REL_SECTION_BASIC,
+		),
+		routerRelSectionAgentTemplate: prepareShippedLorebookPromptTemplate(
+			DEFAULT_ROUTER_REL_SECTION_AGENT,
+		),
 
-        categoryRenderOptions: {},
+		categoryRenderOptions: {},
 
-        combatProfileAutoSwitch: false,
+		combatProfileAutoSwitch: false,
 
-        combatConnectionProfileId: "",
+		combatConnectionProfileId: "",
 
-        combatCompletionPresetId: "",
+		combatCompletionPresetId: "",
 
-        portraitConnectionSource: "default",
+		portraitConnectionSource: "default",
 
-        portraitConnectionProfileId: "",
+		portraitConnectionProfileId: "",
 
-        portraitCompletionPresetId: "",
+		portraitCompletionPresetId: "",
 
-        portraitOllamaUrl: "http://localhost:11434",
+		portraitOllamaUrl: "http://localhost:11434",
 
-        portraitOllamaModel: "",
+		portraitOllamaModel: "",
 
-        portraitOpenaiUrl: "",
+		portraitOpenaiUrl: "",
 
-        portraitOpenaiKey: "",
+		portraitOpenaiKey: "",
 
-        portraitOpenaiModel: "",
+		portraitOpenaiModel: "",
 
-        portraitPromptWordTarget: 200,
+		portraitPromptWordTarget: 200,
 
-        /** Active factory preset id / `user:Name` when last loaded; empty if custom edits. */
-        activePortraitPromptPresetId: '',
+		/** Active factory preset id / `user:Name` when last loaded; empty if custom edits. */
+		activePortraitPromptPresetId: "",
 
-        portraitNpcSystemPrompt: getDefaultPortraitNpcSystemPrompt(),
+		portraitNpcSystemPrompt: getDefaultPortraitNpcSystemPrompt(),
 
-        portraitCharacterSystemPrompt: getDefaultPortraitCharacterSystemPrompt(),
+		portraitCharacterSystemPrompt: getDefaultPortraitCharacterSystemPrompt(),
 
-        portraitLocationSystemPrompt: getDefaultPortraitLocationSystemPrompt(false),
+		portraitLocationSystemPrompt: getDefaultPortraitLocationSystemPrompt(false),
 
-        savedPortraitPromptPresets: {},
+		savedPortraitPromptPresets: {},
 
-        // Dedicated one-shot hidden site generator. The Dungeon Reality section
-        // toggle controls tool availability; these settings remain global.
-        mapArchitectLookback: 12,
+		// Dedicated one-shot hidden site generator. The Dungeon Reality section
+		// toggle controls tool availability; these settings remain global.
+		mapArchitectLookback: 12,
 
-        mapArchitectMaxTokens: 25000,
+		mapArchitectMaxTokens: 25000,
 
-        mapArchitectOpener: "tool",
+		mapArchitectOpener: "tool",
 
-        mapArchitectSystemPrompt: DEFAULT_MAP_ARCHITECT_SYSTEM_PROMPT,
+		mapArchitectSystemPrompt: DEFAULT_MAP_ARCHITECT_SYSTEM_PROMPT,
 
-        mapArchitectConnectionSource: "default",
+		mapArchitectConnectionSource: "default",
 
-        mapArchitectConnectionProfileId: "",
+		mapArchitectConnectionProfileId: "",
 
-        mapArchitectCompletionPresetId: "",
+		mapArchitectCompletionPresetId: "",
 
-        mapArchitectOllamaUrl: "http://localhost:11434",
+		mapArchitectOllamaUrl: "http://localhost:11434",
 
-        mapArchitectOllamaModel: "",
+		mapArchitectOllamaModel: "",
 
-        mapArchitectOpenaiUrl: "",
+		mapArchitectOpenaiUrl: "",
 
-        mapArchitectOpenaiKey: "",
+		mapArchitectOpenaiKey: "",
 
-        mapArchitectOpenaiModel: "",
+		mapArchitectOpenaiModel: "",
 
-        mapRuntimeConnectionSource: "default",
+		mapRuntimeConnectionSource: "default",
 
-        mapRuntimeConnectionProfileId: "",
+		mapRuntimeConnectionProfileId: "",
 
-        mapRuntimeCompletionPresetId: "",
+		mapRuntimeCompletionPresetId: "",
 
-        mapRuntimeOllamaUrl: "http://localhost:11434",
+		mapRuntimeOllamaUrl: "http://localhost:11434",
 
-        mapRuntimeOllamaModel: "",
+		mapRuntimeOllamaModel: "",
 
-        mapRuntimeOpenaiUrl: "",
+		mapRuntimeOpenaiUrl: "",
 
-        mapRuntimeOpenaiKey: "",
+		mapRuntimeOpenaiKey: "",
 
-        mapRuntimeOpenaiModel: "",
+		mapRuntimeOpenaiModel: "",
 
-        mapEvolutionConnectionSource: "default",
+		mapEvolutionConnectionSource: "default",
 
-        mapEvolutionConnectionProfileId: "",
+		mapEvolutionConnectionProfileId: "",
 
-        mapEvolutionCompletionPresetId: "",
+		mapEvolutionCompletionPresetId: "",
 
-        mapEvolutionOllamaUrl: "http://localhost:11434",
+		mapEvolutionOllamaUrl: "http://localhost:11434",
 
-        mapEvolutionOllamaModel: "",
+		mapEvolutionOllamaModel: "",
 
-        mapEvolutionOpenaiUrl: "",
+		mapEvolutionOpenaiUrl: "",
 
-        mapEvolutionOpenaiKey: "",
+		mapEvolutionOpenaiKey: "",
 
-        mapEvolutionOpenaiModel: "",
+		mapEvolutionOpenaiModel: "",
 
-        mapUpdaterEnabled: true,
+		mapUpdaterEnabled: true,
 
-        dungeonMapRevealAll: false,
+		dungeonMapRevealAll: false,
 
-        mapTheme: { ...DEFAULT_MAP_THEME },
+		mapTheme: { ...DEFAULT_MAP_THEME },
 
-        savedMapThemePresets: {},
+		savedMapThemePresets: {},
 
-        activeMapThemePresetId: 'factory:ember',
+		activeMapThemePresetId: "factory:ember",
 
-        mapUpdaterRunEvery: 1,
+		mapUpdaterRunEvery: 1,
 
-        mapUpdaterMaxTokens: 25000,
+		mapUpdaterMaxTokens: 25000,
 
-        mapUpdaterSystemPrompt: DEFAULT_MAP_UPDATER_SYSTEM_PROMPT,
+		mapUpdaterSystemPrompt: DEFAULT_MAP_UPDATER_SYSTEM_PROMPT,
 
-        mapUpdaterLastRunChatLength: 0,
+		mapUpdaterLastRunChatLength: 0,
 
-        mapUpdaterLastRunAt: 0,
+		mapUpdaterLastRunAt: 0,
 
-        mapUpdaterLastSiteRoot: '',
+		mapUpdaterLastSiteRoot: "",
 
-        mapUpdaterPendingExitRoot: '',
+		mapUpdaterPendingExitRoot: "",
 
-        mapUpdaterDirectPrompt: '',
+		mapUpdaterDirectPrompt: "",
 
-        mapUpdaterDirectLookback: 10,
+		mapUpdaterDirectLookback: 10,
 
-        mapUpdaterDirectPromptOpen: false,
+		mapUpdaterDirectPromptOpen: false,
 
-        mapEvolutionDirectPrompt: '',
+		mapEvolutionDirectPrompt: "",
 
-        mapEvolutionDirectLookback: 10,
+		mapEvolutionDirectLookback: 10,
 
-        mapArchitectDirectPrompt: '',
+		mapArchitectDirectPrompt: "",
 
-        mapArchitectDirectLookback: 10,
+		mapArchitectDirectLookback: 10,
 
-        mapEvolutionEnabled: true,
+		mapEvolutionEnabled: true,
 
-        mapEvolutionIntervalHours: 8,
+		mapEvolutionIntervalHours: 8,
 
-        mapEvolutionOnSiteIntervalHours: 1,
+		mapEvolutionOnSiteIntervalHours: 1,
 
-        mapEvolutionOnSiteIntervalMinutes: 0,
+		mapEvolutionOnSiteIntervalMinutes: 0,
 
-        mapEvolutionOnSitePreset: 'dynamic',
+		mapEvolutionOnSitePreset: "dynamic",
 
-        mapEvolutionIntervalHoursBySite: {},
+		mapEvolutionIntervalHoursBySite: {},
 
-        mapEvolutionLookback: 20,
+		mapEvolutionLookback: 20,
 
-        mapEvolutionMaxTokens: 25000,
+		mapEvolutionMaxTokens: 25000,
 
-        mapEvolutionCompressEnabled: true,
+		mapEvolutionCompressEnabled: true,
 
-        mapEvolutionCompressThreshold: 10000,
+		mapEvolutionCompressThreshold: 10000,
 
-        mapEvolutionNarratorCommitTokens: 2000,
+		mapEvolutionNarratorCommitTokens: 2000,
 
-        mapEvolutionCompressSystemPrompt: DEFAULT_MAP_EVOLUTION_COMPRESS_SYSTEM_PROMPT,
+		mapEvolutionCompressSystemPrompt:
+			DEFAULT_MAP_EVOLUTION_COMPRESS_SYSTEM_PROMPT,
 
-        mapEvolutionTickScope: "all",
+		mapEvolutionTickScope: "all",
 
-        mapEvolutionTickCount: 2,
+		mapEvolutionTickCount: 2,
 
-        mapEvolutionTickRandomize: true,
+		mapEvolutionTickRandomize: true,
 
-        mapEvolutionSelectedRoots: [],
+		mapEvolutionSelectedRoots: [],
 
-        mapEvolutionSystemPrompt: DEFAULT_MAP_EVOLUTION_SYSTEM_PROMPT,
+		mapEvolutionSystemPrompt: DEFAULT_MAP_EVOLUTION_SYSTEM_PROMPT,
 
-        mapEvolutionLastFiredBySite: {},
+		mapEvolutionLastFiredBySite: {},
 
-        mapEvolutionBacklogBySite: {},
+		mapEvolutionBacklogBySite: {},
 
-        mapEvolutionThreadsBySite: {},
+		mapEvolutionThreadsBySite: {},
 
-        mapEvolutionLastSiteRoot: "",
+		mapEvolutionLastSiteRoot: "",
 
-        mapEvolutionPendingExitRoot: "",
+		mapEvolutionPendingExitRoot: "",
 
-        mapEvolutionWorldReportLookback: 5,
+		mapEvolutionWorldReportLookback: 5,
 
-        mapEvolutionWorldReportApplications: {},
+		mapEvolutionWorldReportApplications: {},
 
-        worldConnectionSource: "default",
+		worldConnectionSource: "default",
 
-        worldConnectionProfileId: "",
+		worldConnectionProfileId: "",
 
-        worldCompletionPresetId: "",
+		worldCompletionPresetId: "",
 
-        worldOllamaUrl: "http://localhost:11434",
+		worldOllamaUrl: "http://localhost:11434",
 
-        worldOllamaModel: "",
+		worldOllamaModel: "",
 
-        worldOpenaiUrl: "",
+		worldOpenaiUrl: "",
 
-        worldOpenaiKey: "",
+		worldOpenaiKey: "",
 
-        worldOpenaiModel: "",
+		worldOpenaiModel: "",
 
-        gameSystemWizardConnectionSource: "default",
+		gameSystemWizardConnectionSource: "default",
 
-        gameSystemWizardConnectionProfileId: "",
+		gameSystemWizardConnectionProfileId: "",
 
-        gameSystemWizardCompletionPresetId: "",
+		gameSystemWizardCompletionPresetId: "",
 
-        gameSystemWizardOllamaUrl: "http://localhost:11434",
+		gameSystemWizardOllamaUrl: "http://localhost:11434",
 
-        gameSystemWizardOllamaModel: "",
+		gameSystemWizardOllamaModel: "",
 
-        gameSystemWizardOpenaiUrl: "",
+		gameSystemWizardOpenaiUrl: "",
 
-        gameSystemWizardOpenaiKey: "",
+		gameSystemWizardOpenaiKey: "",
 
-        gameSystemWizardOpenaiModel: "",
+		gameSystemWizardOpenaiModel: "",
 
-        gameSystemWizardSystemPrompt: "",
+		gameSystemWizardSystemPrompt: "",
 
-        gameSystemWizardLookback: 10,
+		gameSystemWizardLookback: 10,
 
-        gameSystemWizardLookbackAll: false,
+		gameSystemWizardLookbackAll: false,
 
-        gameSystemWizardInjectLore: false,
+		gameSystemWizardInjectLore: false,
 
-        gameSystemWizardInjectMemo: false,
+		gameSystemWizardInjectMemo: false,
 
-        gameSystemWizardInjectModulePrompts: false,
+		gameSystemWizardInjectModulePrompts: false,
 
-        /** Selected module example keys: stock:CHARACTER, field:TAG, sysprompt:id */
-        gameSystemWizardModuleExampleKeys: [],
+		/** Selected module example keys: stock:CHARACTER, field:TAG, sysprompt:id */
+		gameSystemWizardModuleExampleKeys: [],
 
-        lastResetVersion: "",
+		lastResetVersion: "",
 
-        lastSeenPromptDefaultsFingerprint: "",
+		lastSeenPromptDefaultsFingerprint: "",
 
-        /** @type {ReturnType<typeof buildBundledPromptsSnapshot>|null} Last-acked shipped defaults (for upgrade diffs). */
+		/** @type {ReturnType<typeof buildBundledPromptsSnapshot>|null} Last-acked shipped defaults (for upgrade diffs). */
 
-        lastSeenPromptDefaultsSnapshot: null,
+		lastSeenPromptDefaultsSnapshot: null,
 
-        /**
-         * Timestamp of the last critical-settings localStorage backup that is known
-         * to be present on disk. Used to heal displayGroups / prompt-ack after a
-         * reload cancels ST's async settings save.
-         */
-        criticalSettingsSyncedTs: 0,
+		/**
+		 * Timestamp of the last critical-settings localStorage backup that is known
+		 * to be present on disk. Used to heal displayGroups / prompt-ack after a
+		 * reload cancels ST's async settings save.
+		 */
+		criticalSettingsSyncedTs: 0,
 
-        autoResetPromptsOnUpdate: false,
+		autoResetPromptsOnUpdate: false,
 
-        userPromptSuffix: '## OUTPUT ONLY CHANGED SECTIONS:',
-
-    };
-
+		userPromptSuffix: "## OUTPUT ONLY CHANGED SECTIONS:",
+	};
 }
-
 
 /**
  * Full-replacement Core Prompt used when `settings.fullReviewStateMode` is on.
@@ -1520,10 +1553,10 @@ Include the entity name/title itself (without timestamps like "[Day 1]") as a ke
  * simple, unambiguous contract that weaker models can't misinterpret or drift from.
  */
 /** User-prompt suffix forced while Full Review Mode is on (replaces settings.userPromptSuffix). */
-export const FULL_REVIEW_USER_PROMPT_SUFFIX = '## OUTPUT THE COMPLETE, VERIFIED STATE MEMO FOR EVERY ENABLED MODULE:';
+export const FULL_REVIEW_USER_PROMPT_SUFFIX =
+	"## OUTPUT THE COMPLETE, VERIFIED STATE MEMO FOR EVERY ENABLED MODULE:";
 
-export const FULL_REVIEW_STATE_SYSTEM_PROMPT =
-    `You are the State Extractor Model operating in FULL REVIEW MODE. Your task is to output the COMPLETE, VERIFIED State Memo for EVERY SINGLE enabled module, every single time. This is not optional.
+export const FULL_REVIEW_STATE_SYSTEM_PROMPT = `You are the State Extractor Model operating in FULL REVIEW MODE. Your task is to output the COMPLETE, VERIFIED State Memo for EVERY SINGLE enabled module, every single time. This is not optional.
 <core_directives>
 IGNORE NARRATIVE FLUFF: Do not track temporary dialogue or actions. Only track persistent state changes.
 INTEGRATION: Track all durations stated by the narrative (e.g. 'poisoned for 3 turns'). Decrement by 1 each round in [COMBAT]. For out-of-combat/time-based durations, calculate the delta between the current [TIME] and the [TIME] in the PRIOR MEMO.
@@ -1569,33 +1602,26 @@ Update abilities/attributes/HP/etc accordingly, such as an ability's 1d6 bonus i
 You may be asked to use Markers: ((PLS)), ((B)), ((XB)), ((BDG)), ((HGT)). These are for graphical rendering options; use them if instructed but only if instructed in a specific [MODULE].
 </custom_formatting>`;
 
-
 /** Latest settings migration version — factory reset skips legacy upgrade paths at or below this. */
 
-export const FACTORY_SETTINGS_VERSION = '2026.8.81';
-
+export const FACTORY_SETTINGS_VERSION = "2026.8.81";
 
 /** Remove extension UI keys from localStorage so a factory reset does not rehydrate stale panel state. */
 
 export function clearExtensionLocalStorageUiState() {
+	const keys = [];
 
-    const keys = [];
+	for (let i = 0; i < localStorage.length; i++) {
+		const key = localStorage.key(i);
 
-    for (let i = 0; i < localStorage.length; i++) {
+		// The user's original Quick Prompt Main is not UI chrome — keep it across
+		// factory reset so disabling/resetting the extension cannot delete it.
+		if (key?.startsWith("rpg_tracker_") && key !== MAIN_SYSPROMPT_BACKUP_KEY)
+			keys.push(key);
+	}
 
-        const key = localStorage.key(i);
-
-        // The user's original Quick Prompt Main is not UI chrome — keep it across
-        // factory reset so disabling/resetting the extension cannot delete it.
-        if (key?.startsWith('rpg_tracker_') && key !== MAIN_SYSPROMPT_BACKUP_KEY) keys.push(key);
-
-    }
-
-    for (const key of keys) localStorage.removeItem(key);
-
+	for (const key of keys) localStorage.removeItem(key);
 }
-
-
 
 /**
 
@@ -1606,19 +1632,15 @@ export function clearExtensionLocalStorageUiState() {
  */
 
 export function applyFactoryReset(extensionSettings) {
+	const s = JSON.parse(JSON.stringify(buildDefaultSettings()));
 
-    const s = JSON.parse(JSON.stringify(buildDefaultSettings()));
+	s.settingsVersion = FACTORY_SETTINGS_VERSION;
 
-    s.settingsVersion = FACTORY_SETTINGS_VERSION;
+	s.customPortraits = {};
 
-    s.customPortraits = {};
+	s.customLocationImages = {};
 
-    s.customLocationImages = {};
-
-    extensionSettings[MODULE_NAME] = s;
-
+	extensionSettings[MODULE_NAME] = s;
 }
-
-
 
 /** Fast deterministic hash for comparing bundled default prompt content across releases. */
