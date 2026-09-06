@@ -134,6 +134,7 @@ export function saveProfile(name) {
         portraitAutoGenerateEnemies: s.portraitAutoGenerateEnemies ?? false,
         portraitAutoGenerateNpcs: s.portraitAutoGenerateNpcs ?? false,
         portraitAutoGenerateLocations: s.portraitAutoGenerateLocations ?? false,
+        portraitAutoApplyLocationBackground: s.portraitAutoApplyLocationBackground ?? false,
         portraitAutoGenerateSceneView: s.portraitAutoGenerateSceneView ?? false,
         portraitRealtimeTriggerMode: s.portraitRealtimeTriggerMode || 'location_change',
         portraitRealtimeEveryNOutputs: Math.max(1, Number(s.portraitRealtimeEveryNOutputs) || 1),

@@ -36,12 +36,15 @@ export function syncCurrentLocationBackground(scene) {
     if (scene?.locationImage) applyLocationImageToChatBackground(scene.locationImage);
 }
 
-globalThis._rpgSyncCurrentLocationBackground = async (locationPath) => {
+globalThis._rpgSyncCurrentLocationBackground = async () => {
     const s = getSettings();
     if (!s.portraitAutoApplyLocationBackground || !s.locationImages) return;
-    const scene = await buildImmersionSceneState(s.currentMemo, s);
-    if (scene.storagePath === normalizeLocationPath(locationPath)) syncCurrentLocationBackground(scene);
+    // The builder applies the current image before loading NPCs. Reapplying its
+    // result here could overwrite a newer scene that finished while NPCs loaded.
+    await buildImmersionSceneState(s.currentMemo, s);
 };
+
+let latestBackgroundSceneRequest = 0;
 
 /**
  * @param {object} ctx
@@ -203,8 +206,10 @@ export async function loadNpcEntryByKey(entryId, settings) {
  * @returns {Promise<object>}
  */
 export async function buildImmersionSceneState(memo, settings) {
+    const backgroundRequest = ++latestBackgroundSceneRequest;
     const s = settings || getSettings();
     const ctx = SillyTavern.getContext();
+    const backgroundChatId = ctx.chatId;
 
     const rawLocationText = getCurrentLocationText(memo ?? s.currentMemo, ctx);
     const prefix = getEffectiveRouterCampaignPrefix(ctx.chatId);
@@ -243,7 +248,12 @@ export async function buildImmersionSceneState(memo, settings) {
     }
 
     const locationImage = storagePath ? resolveLocationImageWithMeta(storagePath).src : '';
-    syncCurrentLocationBackground({ locationImage });
+    const liveCtx = SillyTavern.getContext();
+    if (backgroundRequest === latestBackgroundSceneRequest
+        && backgroundChatId === liveCtx.chatId
+        && rawLocationText === getCurrentLocationText(getSettings().currentMemo, liveCtx)) {
+        syncCurrentLocationBackground({ locationImage });
+    }
     const locationBreadcrumb = resolvedPath ? formatLocationBreadcrumb(resolvedPath) : '';
     const locationLeaf = resolvedPath ? resolvedPath.split(' :: ').pop() : rawLocationText;
 
