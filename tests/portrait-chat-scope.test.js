@@ -85,6 +85,28 @@ describe('per-chat portrait ownership', () => {
         expect(hordeFn).not.toContain('pinnedApply');
     });
 
+    it('re-checks live vs partition after persist await so a mid-upload chat switch cannot poison live maps', () => {
+        const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');
+
+        for (const [startMarker, endMarker] of [
+            ['export async function applyPortraitData', 'function migratePortraitMapKey'],
+            ['export async function applyLocationImageData', 'export function scaleImageToLandscape'],
+        ]) {
+            const fn = portraitsSource.slice(
+                portraitsSource.indexOf(startMarker),
+                portraitsSource.indexOf(endMarker),
+            );
+            const persistAt = fn.indexOf('await persistPortraitSrc');
+            const writeModeAt = fn.indexOf('portraitWriteMode(');
+            expect(persistAt).toBeGreaterThan(-1);
+            expect(writeModeAt).toBeGreaterThan(persistAt);
+            // Destination must be pinned from call-time chat, not re-read opts.chatId alone
+            // after the await (empty opts.chatId must still treat liveAtStart as the owner).
+            expect(fn).toContain('const liveAtStart = getActiveChatId()');
+            expect(fn).toContain('portraitWriteMode(liveNow, targetChatId)');
+        }
+    });
+
     it('syncs the current location image to the chat background only when opted in', () => {
         const immersionSource = readFileSync(new URL('../immersion.js', import.meta.url), 'utf8');
         const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');
