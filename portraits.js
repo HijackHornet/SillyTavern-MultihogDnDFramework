@@ -64,20 +64,36 @@ export { normalizeEntityName, lookupCustomPortraitSrc } from './portrait-storage
  * @param {string} entityName
  * @param {string} src
  * @param {{ chatId?: string|null }} [opts] Chat that owned the generation. When the
- *   live chat has switched (common during multi-minute AI Horde waits), write into
- *   that chat's partition only — never the arriving chat's live portrait map.
+ *   live chat has switched (common during multi-minute AI Horde waits, or during the
+ *   shorter persistPortraitSrc upload), write into that chat's partition only — never
+ *   the arriving chat's live portrait map.
  */
 export async function applyPortraitData(entityName, src, opts = {}) {
     const s = getSettings();
     const normName = normalizeEntityName(entityName);
-    const liveChatId = getActiveChatId();
+    // Pin destination before any await. An explicit passChatId wins; otherwise the chat
+    // that owned this apply at call time (not whatever is live after an upload wait).
+    const liveAtStart = getActiveChatId();
     const targetChatId = opts.chatId != null && String(opts.chatId).length > 0
         ? String(opts.chatId)
-        : liveChatId;
-    const writeLive = portraitWriteMode(liveChatId, opts.chatId) === 'live';
+        : liveAtStart;
+
+    // Upload/persist BEFORE deciding live vs partition. persistPortraitSrc can take
+    // seconds (AI Horde data URLs); a chat switch during that await used to leave a
+    // stale writeLive===true decision writing into the arriving chat's live maps and
+    // then snapshotting that pollution into the departing chat's partition.
+    let stored = '';
+    if (src) {
+        stored = await persistPortraitSrc(src, targetChatId, normName);
+    }
+
+    const liveNow = getActiveChatId();
+    const writeLive = portraitWriteMode(liveNow, targetChatId) === 'live';
 
     if (!writeLive) {
         if (!s.chatStates || typeof s.chatStates !== 'object') s.chatStates = {};
+        // Re-read the partition after the await so concurrent snapshots are not clobbered
+        // from a stale object reference captured before the upload.
         const partition = s.chatStates[targetChatId] || {};
         if (!partition.customPortraits || typeof partition.customPortraits !== 'object') {
             partition.customPortraits = {};
@@ -86,7 +102,6 @@ export async function applyPortraitData(entityName, src, opts = {}) {
         if (!src) {
             delete partition.customPortraits[normName];
         } else {
-            const stored = await persistPortraitSrc(src, targetChatId, normName);
             partition.customPortraits[normName] = stored;
         }
         s.chatStates[targetChatId] = partition;
@@ -99,23 +114,18 @@ export async function applyPortraitData(entityName, src, opts = {}) {
     }
 
     if (!s.customPortraits) s.customPortraits = {};
-    const chatId = targetChatId || liveChatId;
+    const chatId = targetChatId || liveNow;
     const previous = s.customPortraits[normName];
 
     if (!src) {
         delete s.customPortraits[normName];
-        snapshotPortraitMapsForChat(s, chatId);
-        if (previous && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
-            await deletePortraitFile(previous);
-        }
     } else {
-        const stored = await persistPortraitSrc(src, chatId, normName);
         s.customPortraits[normName] = stored;
-        snapshotPortraitMapsForChat(s, chatId);
-
-        if (previous && previous !== stored && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
-            await deletePortraitFile(previous);
-        }
+    }
+    snapshotPortraitMapsForChat(s, chatId);
+    if (previous && previous !== s.customPortraits[normName]
+        && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
+        await deletePortraitFile(previous);
     }
     // Portrait sets are infrequent, deliberate actions (not rapid keystrokes like the memo
     // textarea) — force an immediate flush instead of risking the 2s debounce window.
@@ -2027,11 +2037,19 @@ export async function applyLocationImageData(locationPath, src, opts = {}) {
     const s = getSettings();
     const normPath = normalizeLocationPath(locationPath);
     const storageKey = `loc__${normPath}`;
-    const liveChatId = getActiveChatId();
+    // Pin destination before any await — same TOCTOU as applyPortraitData.
+    const liveAtStart = getActiveChatId();
     const targetChatId = opts.chatId != null && String(opts.chatId).length > 0
         ? String(opts.chatId)
-        : liveChatId;
-    const writeLive = portraitWriteMode(liveChatId, opts.chatId) === 'live';
+        : liveAtStart;
+
+    let stored = '';
+    if (src) {
+        stored = await persistPortraitSrc(src, targetChatId, storageKey);
+    }
+
+    const liveNow = getActiveChatId();
+    const writeLive = portraitWriteMode(liveNow, targetChatId) === 'live';
 
     if (!writeLive) {
         if (!s.chatStates || typeof s.chatStates !== 'object') s.chatStates = {};
@@ -2043,7 +2061,6 @@ export async function applyLocationImageData(locationPath, src, opts = {}) {
         if (!src) {
             delete partition.customLocationImages[normPath];
         } else {
-            const stored = await persistPortraitSrc(src, targetChatId, storageKey);
             partition.customLocationImages[normPath] = stored;
         }
         s.chatStates[targetChatId] = partition;
@@ -2056,23 +2073,18 @@ export async function applyLocationImageData(locationPath, src, opts = {}) {
     }
 
     if (!s.customLocationImages) s.customLocationImages = {};
-    const chatId = targetChatId || liveChatId;
+    const chatId = targetChatId || liveNow;
     const previous = s.customLocationImages[normPath];
 
     if (!src) {
         delete s.customLocationImages[normPath];
-        snapshotPortraitMapsForChat(s, chatId);
-        if (previous && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
-            await deletePortraitFile(previous);
-        }
     } else {
-        const stored = await persistPortraitSrc(src, chatId, storageKey);
         s.customLocationImages[normPath] = stored;
-        snapshotPortraitMapsForChat(s, chatId);
-
-        if (previous && previous !== stored && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
-            await deletePortraitFile(previous);
-        }
+    }
+    snapshotPortraitMapsForChat(s, chatId);
+    if (previous && previous !== s.customLocationImages[normPath]
+        && isManagedPortraitPath(previous) && countPortraitPathRefs(s, previous) === 0) {
+        await deletePortraitFile(previous);
     }
     await saveSettings(true);
 }
