@@ -1,6 +1,6 @@
 import { getSettings, getEffectiveRouterCampaignPrefix, saveChatState } from './state-manager.js';
 import { escapeHtml } from './memo-processor.js';
-import { normalizeLocationPath, resolveLocationImageWithMeta, triggerBackgroundLocationGeneration, hasLocationImage, getLinkedPlayerCharacter, isLocationImageGenerating, resolvePortraitSrcForPlayerCharacter } from './portraits.js';
+import { normalizeLocationPath, resolveLocationImageWithMeta, triggerBackgroundLocationGeneration, hasLocationImage, getLinkedPlayerCharacter, isLocationImageGenerating, resolvePortraitSrcForPlayerCharacter, applyLocationImageToChatBackground } from './portraits.js';
 import { resolvePortraitDisplaySrc, lookupCustomPortraitSrc } from './portrait-storage.js';
 import { resolveCurrentLocationPath, formatLocationBreadcrumb } from './location-resolver.js';
 import { isWorldInfoBookKnown, scanRecentOutputForPresentNpcs } from './router.js';
@@ -28,6 +28,23 @@ export function getCurrentLocationText(memo, ctx) {
     const locMatch = (memo || '').match(/Location:\s*([^)\n]+)/i);
     return locMatch ? locMatch[1].trim() : '';
 }
+
+/** Apply the current location image when the user opted into chat-background syncing. */
+export function syncCurrentLocationBackground(scene) {
+    const s = getSettings();
+    if (!s.portraitAutoApplyLocationBackground || !s.locationImages) return;
+    if (scene?.locationImage) applyLocationImageToChatBackground(scene.locationImage);
+}
+
+globalThis._rpgSyncCurrentLocationBackground = async () => {
+    const s = getSettings();
+    if (!s.portraitAutoApplyLocationBackground || !s.locationImages) return;
+    // The builder applies the current image before loading NPCs. Reapplying its
+    // result here could overwrite a newer scene that finished while NPCs loaded.
+    await buildImmersionSceneState(s.currentMemo, s);
+};
+
+let latestBackgroundSceneRequest = 0;
 
 /**
  * @param {object} ctx
@@ -189,8 +206,10 @@ export async function loadNpcEntryByKey(entryId, settings) {
  * @returns {Promise<object>}
  */
 export async function buildImmersionSceneState(memo, settings) {
+    const backgroundRequest = ++latestBackgroundSceneRequest;
     const s = settings || getSettings();
     const ctx = SillyTavern.getContext();
+    const backgroundChatId = ctx.chatId;
 
     const rawLocationText = getCurrentLocationText(memo ?? s.currentMemo, ctx);
     const prefix = getEffectiveRouterCampaignPrefix(ctx.chatId);
@@ -229,6 +248,12 @@ export async function buildImmersionSceneState(memo, settings) {
     }
 
     const locationImage = storagePath ? resolveLocationImageWithMeta(storagePath).src : '';
+    const liveCtx = SillyTavern.getContext();
+    if (backgroundRequest === latestBackgroundSceneRequest
+        && backgroundChatId === liveCtx.chatId
+        && rawLocationText === getCurrentLocationText(getSettings().currentMemo, liveCtx)) {
+        syncCurrentLocationBackground({ locationImage });
+    }
     const locationBreadcrumb = resolvedPath ? formatLocationBreadcrumb(resolvedPath) : '';
     const locationLeaf = resolvedPath ? resolvedPath.split(' :: ').pop() : rawLocationText;
 

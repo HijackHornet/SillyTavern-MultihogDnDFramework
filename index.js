@@ -1523,6 +1523,7 @@ export function syncLocationImageDependentUi(settings) {
 
     // Auto-gen locations requires Show Location Images; RT mode is always toggleable (enables location images when turned on).
     syncCheckbox('rpg_tracker_portrait_auto_locations', lorebookAutoOn, !imagesEnabled || realTimeOn);
+    syncCheckbox('rpg_tracker_portrait_auto_apply_location_background', !!settings.portraitAutoApplyLocationBackground, !imagesEnabled);
     syncCheckbox('rpg_tracker_portrait_auto_scene_view', realTimeOn, false);
     // Keep this available as an emergency kill switch. Turning location images
     // off also stops and disables any active Real-Time generation.
@@ -3536,6 +3537,7 @@ function loadProfile(name) {
     s.portraitAutoGenerateEnemies = p.portraitAutoGenerateEnemies ?? false;
     s.portraitAutoGenerateNpcs = p.portraitAutoGenerateNpcs ?? false;
     s.portraitAutoGenerateLocations = p.portraitAutoGenerateLocations ?? false;
+    s.portraitAutoApplyLocationBackground = p.portraitAutoApplyLocationBackground ?? false;
     s.portraitAutoGenerateSceneView = p.portraitAutoGenerateSceneView ?? false;
     s.portraitRealtimeTriggerMode = ['location_enter', 'location_change', 'every_n_outputs'].includes(p.portraitRealtimeTriggerMode)
         ? p.portraitRealtimeTriggerMode
@@ -3694,6 +3696,7 @@ function loadProfile(name) {
     $('#rpg_tracker_portrait_auto_enemies').prop('checked', !!s.portraitAutoGenerateEnemies);
     $('#rpg_tracker_portrait_auto_npcs').prop('checked', !!s.portraitAutoGenerateNpcs);
     $('#rpg_tracker_portrait_auto_locations').prop('checked', !!s.portraitAutoGenerateLocations);
+    $('#rpg_tracker_portrait_auto_apply_location_background').prop('checked', !!s.portraitAutoApplyLocationBackground);
     $('#rpg_tracker_portrait_auto_scene_view').prop('checked', !!s.portraitAutoGenerateSceneView);
     $('#rpg_tracker_location_images').prop('checked', !!s.locationImages);
     syncNpcPortraitDependentUi(s);
@@ -7415,6 +7418,15 @@ function organizeConnectionSettingsUI() {
             saveSettings();
             if (settings.portraitAutoGenerateLocations) {
                 forceCheckAutoGenerations(refreshAll);
+            }
+        });
+
+        $('#rpg_tracker_portrait_auto_apply_location_background').prop('checked', !!settings.portraitAutoApplyLocationBackground).on('change', function () {
+            if (!settings.locationImages) return;
+            settings.portraitAutoApplyLocationBackground = !!$(this).prop('checked');
+            saveSettings();
+            if (settings.portraitAutoApplyLocationBackground) {
+                void refreshLorebookAgentViewsNow();
             }
         });
 
