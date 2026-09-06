@@ -319,6 +319,7 @@ export function buildDefaultSettings() {
         npcPortraits: true,
 
         locationImages: false,
+        portraitAutoApplyLocationBackground: false,
 
         npcRelationshipBars: false,
         npcRelationshipUpdateMode: 'state_tracker',

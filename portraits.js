@@ -2022,6 +2022,15 @@ export function hasLocationImage(path) {
     return !!(s.customLocationImages && s.customLocationImages[norm]);
 }
 
+/** Apply a location image to SillyTavern's live chat background without changing its saved background selection. */
+export function applyLocationImageToChatBackground(src) {
+    if (!src || typeof document === 'undefined') return;
+    const background = document.getElementById('bg1');
+    if (!background) return;
+    const escapedSrc = String(src).replace(/["\\\r\n]/g, '\\$&');
+    background.style.backgroundImage = `url("${escapedSrc}")`;
+}
+
 /**
  * @param {string} locationPath Full hierarchical path
  * @param {string|null} src Image URL, data URL, managed path, or null to clear
@@ -2087,6 +2096,11 @@ export async function applyLocationImageData(locationPath, src, opts = {}) {
         await deletePortraitFile(previous);
     }
     await saveSettings(true);
+    // Saving/deleting can also outlive a chat switch. Only refresh the background
+    // if the chat that owns this image is still active after those awaits.
+    if (src && portraitWriteMode(getActiveChatId(), targetChatId) === 'live') {
+        void globalThis._rpgSyncCurrentLocationBackground?.(normPath);
+    }
 }
 
 /**

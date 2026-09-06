@@ -107,6 +107,15 @@ describe('per-chat portrait ownership', () => {
         }
     });
 
+    it('syncs the current location image to the chat background only when opted in', () => {
+        const immersionSource = readFileSync(new URL('../immersion.js', import.meta.url), 'utf8');
+        const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');
+        expect(immersionSource).toContain('syncCurrentLocationBackground({ locationImage });');
+        expect(immersionSource).toContain('portraitAutoApplyLocationBackground');
+        expect(portraitsSource).toContain('_rpgSyncCurrentLocationBackground?.(normPath)');
+        expect(portraitsSource).toContain('applyLocationImageToChatBackground');
+    });
+
     it('wires chat switching, persistence, and renames to the active portrait partition only', () => {
         const indexSource = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
         const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');

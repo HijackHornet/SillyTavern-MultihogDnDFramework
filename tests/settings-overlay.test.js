@@ -5,8 +5,17 @@ const stubMarkup = readFileSync(new URL('../settings-stub.html', import.meta.url
 const overlaySource = readFileSync(new URL('../src/ui/settings-overlay.js', import.meta.url), 'utf8');
 const style = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 const indexSource = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+const settingsMarkup = readFileSync(new URL('../settings.html', import.meta.url), 'utf8');
+const defaultsSource = readFileSync(new URL('../src/state/defaults.js', import.meta.url), 'utf8');
 
 describe('settings overlay', () => {
+    it('adds an opt-in location image chat background setting', () => {
+        expect(settingsMarkup).toContain('id="rpg_tracker_portrait_auto_apply_location_background"');
+        expect(settingsMarkup).toContain('Use Location Images as Chat Background');
+        expect(defaultsSource).toContain('portraitAutoApplyLocationBackground: false');
+        expect(indexSource).toContain('portraitAutoApplyLocationBackground');
+    });
+
     it('ships a stub entry point for the extensions drawer', () => {
         expect(stubMarkup).toContain('class="rpg-tracker-settings-stub"');
         expect(stubMarkup).toContain('id="rpg_tracker_open_settings"');
