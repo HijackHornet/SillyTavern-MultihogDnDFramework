@@ -1,6 +1,6 @@
 import { getSettings, getEffectiveRouterCampaignPrefix, saveChatState } from './state-manager.js';
 import { escapeHtml } from './memo-processor.js';
-import { normalizeLocationPath, resolveLocationImageWithMeta, triggerBackgroundLocationGeneration, hasLocationImage, getLinkedPlayerCharacter, isLocationImageGenerating, resolvePortraitSrcForPlayerCharacter } from './portraits.js';
+import { normalizeLocationPath, resolveLocationImageWithMeta, triggerBackgroundLocationGeneration, hasLocationImage, getLinkedPlayerCharacter, isLocationImageGenerating, resolvePortraitSrcForPlayerCharacter, applyLocationImageToChatBackground } from './portraits.js';
 import { resolvePortraitDisplaySrc, lookupCustomPortraitSrc } from './portrait-storage.js';
 import { resolveCurrentLocationPath, formatLocationBreadcrumb } from './location-resolver.js';
 import { isWorldInfoBookKnown, scanRecentOutputForPresentNpcs } from './router.js';
@@ -28,6 +28,20 @@ export function getCurrentLocationText(memo, ctx) {
     const locMatch = (memo || '').match(/Location:\s*([^)\n]+)/i);
     return locMatch ? locMatch[1].trim() : '';
 }
+
+/** Apply the current location image when the user opted into chat-background syncing. */
+export function syncCurrentLocationBackground(scene) {
+    const s = getSettings();
+    if (!s.portraitAutoApplyLocationBackground || !s.locationImages) return;
+    if (scene?.locationImage) applyLocationImageToChatBackground(scene.locationImage);
+}
+
+globalThis._rpgSyncCurrentLocationBackground = async (locationPath) => {
+    const s = getSettings();
+    if (!s.portraitAutoApplyLocationBackground || !s.locationImages) return;
+    const scene = await buildImmersionSceneState(s.currentMemo, s);
+    if (scene.storagePath === normalizeLocationPath(locationPath)) syncCurrentLocationBackground(scene);
+};
 
 /**
  * @param {object} ctx
@@ -229,6 +243,7 @@ export async function buildImmersionSceneState(memo, settings) {
     }
 
     const locationImage = storagePath ? resolveLocationImageWithMeta(storagePath).src : '';
+    syncCurrentLocationBackground({ locationImage });
     const locationBreadcrumb = resolvedPath ? formatLocationBreadcrumb(resolvedPath) : '';
     const locationLeaf = resolvedPath ? resolvedPath.split(' :: ').pop() : rawLocationText;
 
