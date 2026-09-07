@@ -131,6 +131,23 @@ describe('per-chat portrait ownership', () => {
         expect(portraitsSource).toContain('applyLocationImageToChatBackground');
     });
 
+    it('aborts Real-Time scene-art checks after a mid-await chat switch', () => {
+        const immersionSource = readFileSync(new URL('../immersion.js', import.meta.url), 'utf8');
+        const fn = immersionSource.slice(
+            immersionSource.indexOf('export async function runRealtimeSceneArtCheck'),
+            immersionSource.indexOf('export function maybeAutoGenerateImmersionSceneArt'),
+        );
+        expect(immersionSource).toContain("import { canCommitPassForChat } from './src/state/pass-affinity.js'");
+        expect(fn).toContain('const passChatId = getActiveChatId()');
+        expect(fn.indexOf('await buildImmersionSceneState')).toBeGreaterThan(fn.indexOf('const passChatId'));
+        expect(fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())')).toBeGreaterThan(
+            fn.indexOf('await buildImmersionSceneState'),
+        );
+        expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(
+            fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())'),
+        );
+    });
+
     it('wires chat switching, persistence, and renames to the active portrait partition only', () => {
         const indexSource = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
         const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');

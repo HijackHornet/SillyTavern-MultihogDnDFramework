@@ -1,4 +1,5 @@
 import { runtimeState } from '../../app/runtime-state.js';
+import { canCommitPassForChat } from '../../state/pass-affinity.js';
 import { isLocationMappingEnabled } from '../../state/section-enabled.js';
 import {
     bindDungeonMapEmbedEvents,
@@ -134,8 +135,13 @@ export function createSceneViewController({
 
         const performImmersionRefresh = async () => {
             const s = getSettings();
+            // Pin before lorebook await — a mid-refresh chat switch must not
+            // render the departing chat's scene or queue Real-Time gen into the
+            // arriving chat (runRealtimeSceneArtCheck has the same guard).
+            const passChatId = runtimeState.currentChatId;
             try {
                 const scene = await buildImmersionSceneState(s.currentMemo, s);
+                if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
                 runtimeState.hasActiveDungeonMap = !!scene.dungeonMap;
                 maybeAutoGenerateImmersionSceneArt(scene, () => { void runtimeState.refreshImmersionView(); });
                 syncAgentImmersionUi();

@@ -51,6 +51,23 @@ describe('Scene View controller', () => {
         expect(heroHandler).not.toContain('_rpgAgentOpenLocationDetail');
     });
 
+    it('aborts Scene View refresh after a mid-await chat switch before Real-Time gen or DOM apply', () => {
+        const source = readFileSync(new URL('../src/ui/panel/panel-scene-view.js', import.meta.url), 'utf8');
+        const fn = source.slice(
+            source.indexOf('const performImmersionRefresh = async () => {'),
+            source.indexOf('runtimeState.refreshImmersionView = createCoalescedRefresh'),
+        );
+        expect(source).toContain("import { canCommitPassForChat } from '../../state/pass-affinity.js'");
+        expect(fn).toContain('const passChatId = runtimeState.currentChatId');
+        expect(fn.indexOf('await buildImmersionSceneState')).toBeGreaterThan(-1);
+        expect(fn.indexOf('canCommitPassForChat(passChatId, runtimeState.currentChatId)')).toBeGreaterThan(
+            fn.indexOf('await buildImmersionSceneState'),
+        );
+        expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(
+            fn.indexOf('canCommitPassForChat(passChatId, runtimeState.currentChatId)'),
+        );
+    });
+
     it('restores a map graph viewport after the refresh replaces its scroll container', () => {
         const original = { scrollLeft: 284, scrollTop: 96 };
         const replacement = { scrollLeft: 0, scrollTop: 0 };
