@@ -1,4 +1,5 @@
 import { runtimeState } from '../../app/runtime-state.js';
+import { getActiveChatId } from '../../state/chat-persistence.js';
 import { createRouterViewRenderer } from './panel-router-view.js';
 import { wireAgentWorldProgression } from './panel-world-progression.js';
 import { wireAgentMapEvolution } from './panel-map-evolution.js';
@@ -3400,10 +3401,13 @@ export function createPanel(dependencies) {
                                             portraitWrap.style.borderColor = '';
                                             const file = e.dataTransfer?.files?.[0];
                                             if (!file || !file.type.startsWith('image/')) return;
+                                            // Pin before file read / scale awaits — a mid-drop chat
+                                            // switch must not land the portrait in the arriving chat.
+                                            const passChatId = getActiveChatId();
                                             try {
                                                 const dataUrl = await fileToDataUrl(file);
                                                 const scaled = await scaleImageTo512Square(dataUrl);
-                                                await applyPortraitData(item.label, scaled);
+                                                await applyPortraitData(item.label, scaled, { chatId: passChatId });
                                                 toastr['success'](`Portrait applied for ${item.label}`, 'NPC Portrait');
                                                 await refreshManifest();
                                                 refreshRenderedView();
@@ -3786,10 +3790,12 @@ export function createPanel(dependencies) {
                                             locThumbWrap.classList.remove('rt-loc-thumb-drag');
                                             const file = ev.dataTransfer?.files?.[0];
                                             if (!file || !file.type.startsWith('image/')) return;
+                                            // Pin before file read — same cross-chat race as NPC drop.
+                                            const passChatId = getActiveChatId();
                                             try {
                                                 const dataUrl = await fileToDataUrl(file);
                                                 const scaled = await scaleImageToLandscape(dataUrl);
-                                                await applyLocationImageData(locFullPath, scaled);
+                                                await applyLocationImageData(locFullPath, scaled, { chatId: passChatId });
                                                 toastr.success(`Location image applied for ${locFullPath}`, 'Location Image');
                                                 await refreshManifest();
                                             } catch (err) {
@@ -3943,6 +3949,9 @@ export function createPanel(dependencies) {
         const createNpcFromCharCard = async (charCard, bookName, adaptedContent = null) => {
             const ctx = SillyTavern.getContext();
             const s = getSettings();
+            // Pin before lorebook save / portrait fetch awaits so a mid-import
+            // chat switch cannot embed the portrait into the arriving chat.
+            const passChatId = getActiveChatId();
             let name = charCard.name || 'Unnamed NPC';
             let keys = [name];
 
@@ -4105,7 +4114,7 @@ export function createPanel(dependencies) {
                     if (!String(src).startsWith('data:image/')) {
                         try { src = await fetchSrcAsDataUrl(src) || src; } catch (_) { /* keep original path */ }
                     }
-                    await applyPortraitData(name, src);
+                    await applyPortraitData(name, src, { chatId: passChatId });
                     appliedPortrait = true;
                 } catch (err) {
                     console.warn('[RPG Tracker] Failed to apply NPC library portrait:', err);
@@ -4113,7 +4122,7 @@ export function createPanel(dependencies) {
             } else if (charCard.avatar) {
                 try {
                     const avatarUrl = `/characters/${encodeURIComponent(charCard.avatar)}`;
-                    await applyPortraitData(name, avatarUrl);
+                    await applyPortraitData(name, avatarUrl, { chatId: passChatId });
                     appliedPortrait = true;
                 } catch (err) {
                     console.warn('[RPG Tracker] Failed to embed character avatar as NPC portrait:', err);
@@ -5031,12 +5040,14 @@ ${namingRule}`;
 
                 const applyLibraryPortrait = async (name, portraitPath) => {
                     if (!portraitPath || !name) return;
+                    // Pin before fetchSrcAsDataUrl — network wait can outlive a chat switch.
+                    const passChatId = getActiveChatId();
                     try {
                         let src = portraitPath;
                         if (!String(src).startsWith('data:image/')) {
                             try { src = await fetchSrcAsDataUrl(src) || src; } catch (_) { /* keep path */ }
                         }
-                        await applyPortraitData(name, src);
+                        await applyPortraitData(name, src, { chatId: passChatId });
                     } catch (err) {
                         console.warn('[RPG Tracker] Failed to apply library portrait:', err);
                     }

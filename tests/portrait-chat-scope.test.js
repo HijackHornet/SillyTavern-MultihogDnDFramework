@@ -74,6 +74,21 @@ describe('per-chat portrait ownership', () => {
         expect(indexSource).toContain('applyLocationImageData(normPath, finalSrc, { chatId: passChatId })');
         expect(cardEventsSource).toContain('applyPortraitData(entityName, src, { chatId: passChatId })');
 
+        // Lorebook Agent panel drops / library imports pin before file/network awaits.
+        const panelBuilderSource = readFileSync(new URL('../src/ui/panel/panel-builder.js', import.meta.url), 'utf8');
+        expect(panelBuilderSource).toContain("import { getActiveChatId } from '../../state/chat-persistence.js'");
+        expect(panelBuilderSource).toContain('await applyPortraitData(item.label, scaled, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyLocationImageData(locFullPath, scaled, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyPortraitData(name, src, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyPortraitData(name, avatarUrl, { chatId: passChatId })');
+        // Unpinned apply*Data calls must not remain in panel-builder (except the
+        // function dependency destructure / type references).
+        const applyCalls = panelBuilderSource.match(/await apply(?:Portrait|LocationImage)Data\([^)]*\)/g) || [];
+        expect(applyCalls.length).toBeGreaterThan(0);
+        for (const call of applyCalls) {
+            expect(call).toContain('chatId: passChatId');
+        }
+
         // generateWithHorde must call the supplied localApply — never applyPortraitData —
         // so location-image and NPC-library Apply cannot land in customPortraits after a switch.
         const hordeFn = portraitsSource.slice(
