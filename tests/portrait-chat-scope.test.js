@@ -148,6 +148,66 @@ describe('per-chat portrait ownership', () => {
         );
     });
 
+    it('pins auto-gen kickoffs before lorebook awaits and aborts when affinity is lost', () => {
+        const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');
+        const indexSource = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+
+        expect(portraitsSource).toContain("import { canCommitPassForChat } from './src/state/pass-affinity.js'");
+
+        const forceFn = portraitsSource.slice(
+            portraitsSource.indexOf('export async function forceCheckAutoGenerations'),
+            portraitsSource.indexOf('export async function checkAndTriggerAutoGenerations'),
+        );
+        expect(forceFn.indexOf('const passChatId = getActiveChatId()')).toBeGreaterThan(-1);
+        const forceLoadAt = forceFn.indexOf('await ctx.loadWorldInfo');
+        expect(forceLoadAt).toBeGreaterThan(forceFn.indexOf('const passChatId'));
+        expect(forceFn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())', forceLoadAt))
+            .toBeGreaterThan(forceLoadAt);
+        expect(forceFn).toContain('triggerBackgroundPortraitGeneration(name, refresh, entry.content || \'\', pinnedOpts)');
+        expect(forceFn).toContain('triggerBackgroundLocationGeneration(path, refresh, entry.content, pinnedOpts)');
+
+        const checkFn = portraitsSource.slice(
+            portraitsSource.indexOf('export async function checkAndTriggerAutoGenerations'),
+            portraitsSource.indexOf('// ── Location images (hierarchical lore paths)'),
+        );
+        expect(checkFn.indexOf('const passChatId = getActiveChatId()')).toBeGreaterThan(-1);
+        const checkLoadAt = checkFn.indexOf('await ctx.loadWorldInfo');
+        expect(checkLoadAt).toBeGreaterThan(checkFn.indexOf('const passChatId'));
+        expect(checkFn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())', checkLoadAt))
+            .toBeGreaterThan(checkLoadAt);
+        expect(checkFn).toContain('chatId: passChatId');
+
+        const locFn = portraitsSource.slice(
+            portraitsSource.indexOf('export async function checkAndTriggerLocationAutoGenerations'),
+            portraitsSource.indexOf('export async function checkAndTriggerLocationAutoGenerations') + 1200,
+        );
+        const locLoadAt = locFn.indexOf('await loadLocationLorebookEntries()');
+        expect(locLoadAt).toBeGreaterThan(locFn.indexOf('passChatId'));
+        expect(locFn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())', locLoadAt))
+            .toBeGreaterThan(locLoadAt);
+
+        const portraitTrigger = portraitsSource.slice(
+            portraitsSource.indexOf('export function triggerBackgroundPortraitGeneration'),
+            portraitsSource.indexOf('export function resetAutoGenerationTracking'),
+        );
+        expect(portraitTrigger).toContain('opts.chatId');
+        expect(portraitTrigger).toContain('await applyPortraitData(name, scaled, { chatId: passChatId })');
+
+        const locationTrigger = portraitsSource.slice(
+            portraitsSource.indexOf('export function triggerBackgroundLocationGeneration'),
+            portraitsSource.indexOf('async function loadLocationLorebookEntries'),
+        );
+        expect(locationTrigger).toContain('opts.chatId');
+        expect(locationTrigger).toContain('await applyLocationImageData(normPath, scaled, { chatId: passChatId })');
+
+        // Chat-link-off switches must also clear the session-known auto-gen set.
+        const offBranch = indexSource.slice(
+            indexSource.indexOf('if (!s.chatLinkEnabled) {'),
+            indexSource.indexOf('// saveChatState(oldChatId) already called above'),
+        );
+        expect(offBranch).toContain('resetAutoGenerationTracking()');
+    });
+
     it('wires chat switching, persistence, and renames to the active portrait partition only', () => {
         const indexSource = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
         const portraitsSource = readFileSync(new URL('../portraits.js', import.meta.url), 'utf8');
