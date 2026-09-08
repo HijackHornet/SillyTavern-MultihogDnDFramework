@@ -4,6 +4,7 @@ import { normalizeLocationPath, resolveLocationImageWithMeta, triggerBackgroundL
 import { resolvePortraitDisplaySrc, lookupCustomPortraitSrc } from './portrait-storage.js';
 import { resolveCurrentLocationPath, formatLocationBreadcrumb } from './location-resolver.js';
 import { isWorldInfoBookKnown, scanRecentOutputForPresentNpcs } from './router.js';
+import { canCommitPassForChat } from './src/state/pass-affinity.js';
 import { resolveDungeonMapForLocation, resolveDungeonMapFromHistorySnapshot, stripDungeonMapSection } from './dungeon-reality.js';
 import { buildDungeonMapGraph, renderDungeonMapEmbedHtml } from './dungeon-map-graph.js';
 import { isDungeonMapDetached, isDungeonMapRevealAll } from './src/ui/panel/dungeon-map-panel.js';
@@ -526,8 +527,12 @@ export async function runRealtimeSceneArtCheck() {
     const s = getSettings();
     if (!s.portraitAutoGenerateSceneView) return;
     if (!s.locationImages || s.enablePortraits === false) return;
+    // Pin before lorebook await — a mid-check chat switch must not stamp visit
+    // tracking or queue Real-Time location gen into the arriving chat.
+    const passChatId = getActiveChatId();
     try {
         const scene = await buildImmersionSceneState(s.currentMemo, s);
+        if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
         maybeAutoGenerateImmersionSceneArt(scene, () => {
             if (typeof globalThis._rpgRefreshImmersionView === 'function') {
                 void globalThis._rpgRefreshImmersionView();

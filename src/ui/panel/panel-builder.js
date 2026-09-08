@@ -1,4 +1,6 @@
 import { runtimeState } from '../../app/runtime-state.js';
+import { getActiveChatId } from '../../state/chat-persistence.js';
+import { canCommitPassForChat } from '../../state/pass-affinity.js';
 import { createRouterViewRenderer } from './panel-router-view.js';
 import { wireAgentWorldProgression } from './panel-world-progression.js';
 import { wireAgentMapEvolution } from './panel-map-evolution.js';
@@ -3400,10 +3402,13 @@ export function createPanel(dependencies) {
                                             portraitWrap.style.borderColor = '';
                                             const file = e.dataTransfer?.files?.[0];
                                             if (!file || !file.type.startsWith('image/')) return;
+                                            // Pin before file read / scale awaits — a mid-drop chat
+                                            // switch must not land the portrait in the arriving chat.
+                                            const passChatId = getActiveChatId();
                                             try {
                                                 const dataUrl = await fileToDataUrl(file);
                                                 const scaled = await scaleImageTo512Square(dataUrl);
-                                                await applyPortraitData(item.label, scaled);
+                                                await applyPortraitData(item.label, scaled, { chatId: passChatId });
                                                 toastr['success'](`Portrait applied for ${item.label}`, 'NPC Portrait');
                                                 await refreshManifest();
                                                 refreshRenderedView();
@@ -3786,10 +3791,12 @@ export function createPanel(dependencies) {
                                             locThumbWrap.classList.remove('rt-loc-thumb-drag');
                                             const file = ev.dataTransfer?.files?.[0];
                                             if (!file || !file.type.startsWith('image/')) return;
+                                            // Pin before file read — same cross-chat race as NPC drop.
+                                            const passChatId = getActiveChatId();
                                             try {
                                                 const dataUrl = await fileToDataUrl(file);
                                                 const scaled = await scaleImageToLandscape(dataUrl);
-                                                await applyLocationImageData(locFullPath, scaled);
+                                                await applyLocationImageData(locFullPath, scaled, { chatId: passChatId });
                                                 toastr.success(`Location image applied for ${locFullPath}`, 'Location Image');
                                                 await refreshManifest();
                                             } catch (err) {
@@ -3943,6 +3950,9 @@ export function createPanel(dependencies) {
         const createNpcFromCharCard = async (charCard, bookName, adaptedContent = null) => {
             const ctx = SillyTavern.getContext();
             const s = getSettings();
+            // Pin before lorebook save / portrait fetch awaits so a mid-import
+            // chat switch cannot embed the portrait into the arriving chat.
+            const passChatId = getActiveChatId();
             let name = charCard.name || 'Unnamed NPC';
             let keys = [name];
 
@@ -4072,29 +4082,35 @@ export function createPanel(dependencies) {
                 try { await ctx.saveWorldInfo(bookName, bookData); } catch (_) { }
             }
 
-            rememberCampaignBook(bookName, s);
+            // The lorebook write belongs to the captured book, but activation and
+            // relationship state belong to the live chat only while it still owns this import.
+            if (canCommitPassForChat(passChatId, getActiveChatId())) {
+                rememberCampaignBook(bookName, s);
 
-            // Activate the new entry key
-            const fullId = `${bookName}::${nextUid}`;
-            if (!Array.isArray(s.activeRouterKeys)) s.activeRouterKeys = [];
-            if (!s.activeRouterKeys.includes(fullId)) {
-                s.activeRouterKeys.push(fullId);
+                // Activate the new entry key
+                const fullId = `${bookName}::${nextUid}`;
+                if (!Array.isArray(s.activeRouterKeys)) s.activeRouterKeys = [];
+                if (!s.activeRouterKeys.includes(fullId)) {
+                    s.activeRouterKeys.push(fullId);
+                }
+
+                // Initialise code-owned relationship values for this NPC
+                if (!s.npcRelationshipValues) s.npcRelationshipValues = {};
+                if (!s.npcRelationshipValues[fullId]) {
+                    s.npcRelationshipValues[fullId] = { friendship: 0, affection: 0 };
+                }
+
+                void saveSettings();
             }
-
-            // Initialise code-owned relationship values for this NPC
-            if (!s.npcRelationshipValues) s.npcRelationshipValues = {};
-            if (!s.npcRelationshipValues[fullId]) {
-                s.npcRelationshipValues[fullId] = { friendship: 0, affection: 0 };
-            }
-
-            void saveSettings();
 
             // Select the book in ST so native WI (and /world-dependent paths) can see it.
-            if (typeof ctx.executeSlashCommandsWithOptions === 'function') {
+            if (canCommitPassForChat(passChatId, getActiveChatId()) && typeof ctx.executeSlashCommandsWithOptions === 'function') {
                 if (typeof ctx.updateWorldInfoList === 'function') {
                     try { await ctx.updateWorldInfoList(); } catch (_) {}
                 }
-                await ctx.executeSlashCommandsWithOptions(`/world state=on silent=true "${bookName}"`);
+                if (canCommitPassForChat(passChatId, getActiveChatId())) {
+                    await ctx.executeSlashCommandsWithOptions(`/world state=on silent=true "${bookName}"`);
+                }
             }
 
             // Embed portrait: library/package data URL or path, else ST character avatar
@@ -4105,7 +4121,7 @@ export function createPanel(dependencies) {
                     if (!String(src).startsWith('data:image/')) {
                         try { src = await fetchSrcAsDataUrl(src) || src; } catch (_) { /* keep original path */ }
                     }
-                    await applyPortraitData(name, src);
+                    await applyPortraitData(name, src, { chatId: passChatId });
                     appliedPortrait = true;
                 } catch (err) {
                     console.warn('[RPG Tracker] Failed to apply NPC library portrait:', err);
@@ -4113,7 +4129,7 @@ export function createPanel(dependencies) {
             } else if (charCard.avatar) {
                 try {
                     const avatarUrl = `/characters/${encodeURIComponent(charCard.avatar)}`;
-                    await applyPortraitData(name, avatarUrl);
+                    await applyPortraitData(name, avatarUrl, { chatId: passChatId });
                     appliedPortrait = true;
                 } catch (err) {
                     console.warn('[RPG Tracker] Failed to embed character avatar as NPC portrait:', err);
@@ -4122,7 +4138,7 @@ export function createPanel(dependencies) {
 
             // Manual NPC/PC Manager writes do not produce a Lorebook Agent
             // finish event, so enqueue this newly saved entry directly.
-            if (!appliedPortrait && s.enablePortraits !== false && s.npcPortraits !== false && s.portraitAutoGenerateNpcs) {
+            if (canCommitPassForChat(passChatId, getActiveChatId()) && !appliedPortrait && s.enablePortraits !== false && s.npcPortraits !== false && s.portraitAutoGenerateNpcs) {
                 triggerBackgroundPortraitGeneration(name, refreshAll, content);
             }
 
@@ -5031,12 +5047,14 @@ ${namingRule}`;
 
                 const applyLibraryPortrait = async (name, portraitPath) => {
                     if (!portraitPath || !name) return;
+                    // Pin before fetchSrcAsDataUrl — network wait can outlive a chat switch.
+                    const passChatId = getActiveChatId();
                     try {
                         let src = portraitPath;
                         if (!String(src).startsWith('data:image/')) {
                             try { src = await fetchSrcAsDataUrl(src) || src; } catch (_) { /* keep path */ }
                         }
-                        await applyPortraitData(name, src);
+                        await applyPortraitData(name, src, { chatId: passChatId });
                     } catch (err) {
                         console.warn('[RPG Tracker] Failed to apply library portrait:', err);
                     }
@@ -5065,6 +5083,9 @@ ${namingRule}`;
                     };
                     if (typeof saveChatState === 'function') saveChatState(chatId);
                     await applyLibraryPortrait(rec.name, rec.portraitPath);
+                    // The card and portrait have been saved for their owner. Do not
+                    // launch a CHARACTER update in a different chat after the upload.
+                    if (!canCommitPassForChat(chatId, getActiveChatId())) return true;
                     toastr['info'](`Setting "${rec.name}" as Player Card and updating [CHARACTER]…`, 'Library');
                     const result = await sendDirectPrompt(buildApplyLibraryCardAsPcPrompt(rec));
                     if (typeof refreshAgentManifestNow === 'function') await refreshAgentManifestNow();

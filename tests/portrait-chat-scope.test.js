@@ -74,6 +74,21 @@ describe('per-chat portrait ownership', () => {
         expect(indexSource).toContain('applyLocationImageData(normPath, finalSrc, { chatId: passChatId })');
         expect(cardEventsSource).toContain('applyPortraitData(entityName, src, { chatId: passChatId })');
 
+        // Lorebook Agent panel drops / library imports pin before file/network awaits.
+        const panelBuilderSource = readFileSync(new URL('../src/ui/panel/panel-builder.js', import.meta.url), 'utf8');
+        expect(panelBuilderSource).toContain("import { getActiveChatId } from '../../state/chat-persistence.js'");
+        expect(panelBuilderSource).toContain('await applyPortraitData(item.label, scaled, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyLocationImageData(locFullPath, scaled, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyPortraitData(name, src, { chatId: passChatId })');
+        expect(panelBuilderSource).toContain('await applyPortraitData(name, avatarUrl, { chatId: passChatId })');
+        // Unpinned apply*Data calls must not remain in panel-builder (except the
+        // function dependency destructure / type references).
+        const applyCalls = panelBuilderSource.match(/await apply(?:Portrait|LocationImage)Data\([^)]*\)/g) || [];
+        expect(applyCalls.length).toBeGreaterThan(0);
+        for (const call of applyCalls) {
+            expect(call).toContain('chatId: passChatId');
+        }
+
         // generateWithHorde must call the supplied localApply — never applyPortraitData —
         // so location-image and NPC-library Apply cannot land in customPortraits after a switch.
         const hordeFn = portraitsSource.slice(
@@ -114,6 +129,23 @@ describe('per-chat portrait ownership', () => {
         expect(immersionSource).toContain('portraitAutoApplyLocationBackground');
         expect(portraitsSource).toContain('_rpgSyncCurrentLocationBackground?.(normPath)');
         expect(portraitsSource).toContain('applyLocationImageToChatBackground');
+    });
+
+    it('aborts Real-Time scene-art checks after a mid-await chat switch', () => {
+        const immersionSource = readFileSync(new URL('../immersion.js', import.meta.url), 'utf8');
+        const fn = immersionSource.slice(
+            immersionSource.indexOf('export async function runRealtimeSceneArtCheck'),
+            immersionSource.indexOf('export function maybeAutoGenerateImmersionSceneArt'),
+        );
+        expect(immersionSource).toContain("import { canCommitPassForChat } from './src/state/pass-affinity.js'");
+        expect(fn).toContain('const passChatId = getActiveChatId()');
+        expect(fn.indexOf('await buildImmersionSceneState')).toBeGreaterThan(fn.indexOf('const passChatId'));
+        expect(fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())')).toBeGreaterThan(
+            fn.indexOf('await buildImmersionSceneState'),
+        );
+        expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(
+            fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())'),
+        );
     });
 
     it('wires chat switching, persistence, and renames to the active portrait partition only', () => {
