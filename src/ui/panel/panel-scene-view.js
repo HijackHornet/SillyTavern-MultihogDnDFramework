@@ -166,6 +166,7 @@ export function createSceneViewController({
                 restoreDungeonMapViewport(container, mapViewport);
                 bindImmersionViewEvents(scene);
             } catch (err) {
+                if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
                 console.error('[RPG Tracker] runtimeState.refreshImmersionView failed:', err);
                 runtimeState.hasActiveDungeonMap = false;
                 syncAgentImmersionUi();

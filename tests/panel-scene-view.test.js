@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createSceneViewController } from '../src/ui/panel/panel-scene-view.js';
 import { captureDungeonMapViewport, restoreDungeonMapViewport } from '../src/ui/panel/dungeon-map-panel.js';
@@ -9,6 +9,7 @@ afterEach(() => {
     delete globalThis._rpgCheckRealtimeSceneArt;
     delete globalThis._rpgSyncAgentImmersionUi;
     runtimeState.hasActiveDungeonMap = false;
+    runtimeState.currentChatId = null;
 });
 
 function mountController(settings, extra = {}) {
@@ -42,6 +43,28 @@ function mountController(settings, extra = {}) {
 }
 
 describe('Scene View controller', () => {
+    it.each(['resolve', 'reject'])('ignores a stale scene %s after switching chats', async outcome => {
+        runtimeState.currentChatId = 'A';
+        let finish;
+        const pending = new Promise((resolve, reject) => {
+            finish = () => outcome === 'resolve' ? resolve({ dungeonMap: {} }) : reject(new Error('late failure'));
+        });
+        const generate = vi.fn();
+        const { immersion } = mountController({ agentImmersionMode: true, locationImages: true }, {
+            buildImmersionSceneState: () => pending,
+            maybeAutoGenerateImmersionSceneArt: generate,
+        });
+        const refresh = runtimeState.refreshImmersionView();
+        runtimeState.currentChatId = 'B';
+        runtimeState.hasActiveDungeonMap = true;
+        immersion.innerHTML = 'B scene';
+        finish();
+        await refresh;
+        expect(immersion.innerHTML).toBe('B scene');
+        expect(runtimeState.hasActiveDungeonMap).toBe(true);
+        expect(generate).not.toHaveBeenCalled();
+    });
+
     it('opens location image controls directly from the Visuals/Map hero image', () => {
         const source = readFileSync(new URL('../src/ui/panel/panel-scene-view.js', import.meta.url), 'utf8');
         const heroStart = source.indexOf("const hero = root.querySelector('.rt-immersion-hero-wrap')");

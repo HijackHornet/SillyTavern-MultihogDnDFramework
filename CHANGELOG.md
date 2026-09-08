@@ -2,6 +2,12 @@
 
 All notable changes to the **Multihog D&D Framework** will be documented in this file.
 
+## [2026.8.83] - 2026-09-08
+
+### Fixed
+- Lorebook Agent portrait and location-image drops and library imports retain their original chat while files are read, fetched, and uploaded.
+- Late scene refreshes, NPC activation, fallback portrait generation, and Player Card updates no longer modify another chat after switching.
+
 ## [2026.8.82] - 2026-09-01
 
 ### Fixed
