@@ -2605,6 +2605,10 @@ function onChatChanged(newChatId) {
     if (!s.chatLinkEnabled) {
         loadPortraitMapsForChat(s, resolvedId);
         if (migratedPortraitScope) void saveSettings(true);
+        // Portrait auto-gen knownEntities is session-global; clear it so Chat B
+        // does not inherit Chat A's "already seen" set (and so an in-flight
+        // checkAndTrigger from Chat A cannot keep enqueueing against Chat B).
+        resetAutoGenerationTracking();
         // World Progression "last fired" is operational per-chat state and must never bleed
         // between scenarios regardless of chatLinkEnabled. Reset it unconditionally on actual switch.
         s.worldProgressionLastFiredAtMinutes = -1;
