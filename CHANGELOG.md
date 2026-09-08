@@ -2,6 +2,13 @@
 
 All notable changes to the **Multihog D&D Framework** will be documented in this file.
 
+## [2026.8.84] - 2026-09-08
+
+### Fixed
+- Portrait and location auto-generation checks retain chat ownership across lorebook loads and stop enqueueing after a chat switch.
+- Queued image jobs stop before using another chat's prompt context; late Real-Time failures no longer disable the arriving chat's mode.
+- Chat switches with Chat Link off reset auto-generation entity tracking.
+
 ## [2026.8.83] - 2026-09-08
 
 ### Fixed

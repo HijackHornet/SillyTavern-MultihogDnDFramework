@@ -1698,6 +1698,10 @@ export function getEnemyEntities() {
  *   otherwise a mid-await chat switch would bind the arriving chat.
  */
 export function triggerBackgroundPortraitGeneration(name, refresh, npcContent = null, opts = {}) {
+    const passChatId = opts.chatId != null && String(opts.chatId).length > 0
+        ? String(opts.chatId)
+        : getActiveChatId();
+    if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
     const alreadyHas = hasPortrait(name);
     const alreadyGenerating = activeGenerations.has(name);
     console.log(`[RPG Tracker] triggerBackgroundPortraitGeneration for "${name}". alreadyHasPortrait:`, alreadyHas, `alreadyGenerating:`, alreadyGenerating);
@@ -1712,19 +1716,15 @@ export function triggerBackgroundPortraitGeneration(name, refresh, npcContent = 
         imageGenToast('info', `Queued portrait for ${name} (${queuePos} ahead)...`, 'RPG Tracker');
     }
 
-    // Prefer the caller's pinned chat (kickoff may have awaited lorebook loads).
-    // Otherwise pin now, before the shared queue / AI Horde wait.
-    const passChatId = opts.chatId != null && String(opts.chatId).length > 0
-        ? String(opts.chatId)
-        : getActiveChatId();
-
     enqueueImageGen(async () => {
         try {
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             console.log(`[RPG Tracker] Generating prompt for "${name}" (NPC content provided: ${!!npcContent})`);
             const prompt = npcContent
                 ? await generateNpcPortraitPrompt(name, npcContent)
                 : await generatePortraitPrompt(name);
             console.log(`[RPG Tracker] Generated prompt for "${name}":`, prompt);
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             if (!prompt) {
                 console.warn(`[RPG Tracker] Could not generate prompt for ${name} - no context found.`);
                 return;
@@ -1736,11 +1736,12 @@ export function triggerBackgroundPortraitGeneration(name, refresh, npcContent = 
             console.log(`[RPG Tracker] Applying portrait data for "${name}"...`);
             await applyPortraitData(name, scaled, { chatId: passChatId });
             imageGenToast('success', `Portrait auto-generated and applied for ${name}!`, 'RPG Tracker');
-            if (typeof refresh === 'function') {
+            if (canCommitPassForChat(passChatId, getActiveChatId()) && typeof refresh === 'function') {
                 console.log(`[RPG Tracker] Triggering UI refresh callback...`);
                 refresh();
             }
         } catch (err) {
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             console.error(`[RPG Tracker] Background portrait generation failed for ${name}:`, err);
             const errMsg = String(err.message || err);
             const is524 = errMsg.includes('524') || errMsg.includes('timeout') || errMsg.includes('Upstream');
@@ -2396,6 +2397,10 @@ export function isLocationImageGenerating(locationPath) {
  * @param {{ forceReplace?: boolean, realtimeArrival?: boolean, chatId?: string|null }} [opts]
  */
 export function triggerBackgroundLocationGeneration(locationPath, refresh, locContent = '', opts = {}) {
+    const passChatId = opts.chatId != null && String(opts.chatId).length > 0
+        ? String(opts.chatId)
+        : getActiveChatId();
+    if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
     const s = getSettings();
     const isRealtimeArrival = !!opts.realtimeArrival;
     // Real-Time Mode: only Scene View arrival may auto-generate; block Lorebook Agent paths.
@@ -2412,11 +2417,6 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
 
     activeLocationGenerations.add(normPath);
     const leaf = normPath.split(' :: ').pop() || normPath;
-    // Prefer the caller's pinned chat (kickoff may have awaited lorebook loads).
-    // Otherwise pin now, before queue / Horde wait.
-    const passChatId = opts.chatId != null && String(opts.chatId).length > 0
-        ? String(opts.chatId)
-        : getActiveChatId();
     if (!isRealtimeArrival) {
         const queuePos = _imageGenQueue.length + (_imageGenQueueRunning ? 1 : 0);
         if (queuePos <= 0) {
@@ -2424,7 +2424,7 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
         } else {
             imageGenToast('info', `Queued location image for ${leaf} (${queuePos} ahead)...`, 'RPG Tracker');
         }
-    } else if (typeof refresh === 'function') {
+    } else if (canCommitPassForChat(passChatId, getActiveChatId()) && typeof refresh === 'function') {
         refresh();
     }
 
@@ -2432,6 +2432,7 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
         const realtimeAbortController = isRealtimeArrival ? new AbortController() : null;
         if (realtimeAbortController) activeRealtimeLocationAbortController = realtimeAbortController;
         try {
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             // The user may have disabled Real-Time Mode while this job waited in
             // the shared queue. Abandon it before touching either endpoint.
             if (isRealtimeArrival && (!getSettings().portraitAutoGenerateSceneView || realtimeLocationGenerationFailed)) {
@@ -2440,6 +2441,7 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
             // generateLocationImagePrompt runs the Present-Now keyword scanner (latest
             // output only) before building the image prompt — must stay ahead of generatePortraitDirect.
             const prompt = await generateLocationImagePrompt(normPath, locContent);
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             if (!prompt) {
                 if (isRealtimeArrival) {
                     await disableRealtimeLocationGenerationAfterFailure(new Error('No image prompt was returned'));
@@ -2456,8 +2458,9 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
             if (!isRealtimeArrival) {
                 imageGenToast('success', `${forceReplace ? 'Location image regenerated' : 'Location image auto-generated'} for ${leaf}!`, 'RPG Tracker');
             }
-            if (!isRealtimeArrival && typeof refresh === 'function') refresh();
+            if (!isRealtimeArrival && canCommitPassForChat(passChatId, getActiveChatId()) && typeof refresh === 'function') refresh();
         } catch (err) {
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
             console.error(`[RPG Tracker] Background location image generation failed for ${normPath}:`, err);
             const errMsg = String(err.message || err);
             if (isRealtimeArrival) {
@@ -2477,7 +2480,7 @@ export function triggerBackgroundLocationGeneration(locationPath, refresh, locCo
             activeLocationGenerations.delete(normPath);
             // Refresh only after clearing the active marker. The failure latch
             // makes this final UI refresh incapable of scheduling a retry.
-            if (isRealtimeArrival && typeof refresh === 'function') refresh();
+            if (isRealtimeArrival && canCommitPassForChat(passChatId, getActiveChatId()) && typeof refresh === 'function') refresh();
         }
     });
 }
