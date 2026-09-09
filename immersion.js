@@ -529,10 +529,15 @@ export async function runRealtimeSceneArtCheck() {
     if (!s.locationImages || s.enablePortraits === false) return;
     // Pin before lorebook await — a mid-check chat switch must not stamp visit
     // tracking or queue Real-Time location gen into the arriving chat.
+    // Also snapshot the memo string: onChatChanged can flip chat id first and
+    // only later project the arriving partition, so chat affinity alone is not
+    // enough when the build started against the departing live memo.
     const passChatId = getActiveChatId();
+    const memoAtStart = s.currentMemo;
     try {
-        const scene = await buildImmersionSceneState(s.currentMemo, s);
+        const scene = await buildImmersionSceneState(memoAtStart, s);
         if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
+        if ((memoAtStart || '') !== (getSettings().currentMemo || '')) return;
         maybeAutoGenerateImmersionSceneArt(scene, () => {
             if (typeof globalThis._rpgRefreshImmersionView === 'function') {
                 void globalThis._rpgRefreshImmersionView();

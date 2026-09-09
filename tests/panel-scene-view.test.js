@@ -50,7 +50,7 @@ describe('Scene View controller', () => {
             finish = () => outcome === 'resolve' ? resolve({ dungeonMap: {} }) : reject(new Error('late failure'));
         });
         const generate = vi.fn();
-        const { immersion } = mountController({ agentImmersionMode: true, locationImages: true }, {
+        const { immersion } = mountController({ agentImmersionMode: true, locationImages: true, currentMemo: 'memo-A' }, {
             buildImmersionSceneState: () => pending,
             maybeAutoGenerateImmersionSceneArt: generate,
         });
@@ -62,6 +62,30 @@ describe('Scene View controller', () => {
         await refresh;
         expect(immersion.innerHTML).toBe('B scene');
         expect(runtimeState.hasActiveDungeonMap).toBe(true);
+        expect(generate).not.toHaveBeenCalled();
+    });
+
+    it('ignores a scene built against a departing memo when chat id already flipped', async () => {
+        // Mirrors onChatChanged: currentChatId is set to the arriving chat before
+        // loadChatState replaces the live memo. Affinity alone would pass.
+        runtimeState.currentChatId = 'B';
+        const settings = { agentImmersionMode: true, locationImages: true, currentMemo: 'departing-memo' };
+        let finish;
+        const pending = new Promise((resolve) => {
+            finish = () => resolve({ dungeonMap: { rooms: 1 }, storagePath: 'Ancient Ruins' });
+        });
+        const generate = vi.fn();
+        const { immersion } = mountController(settings, {
+            buildImmersionSceneState: () => pending,
+            maybeAutoGenerateImmersionSceneArt: generate,
+        });
+        const refresh = runtimeState.refreshImmersionView();
+        // loadChatState projects the arriving partition mid-await
+        settings.currentMemo = 'arriving-memo';
+        immersion.innerHTML = 'arriving scene';
+        finish();
+        await refresh;
+        expect(immersion.innerHTML).toBe('arriving scene');
         expect(generate).not.toHaveBeenCalled();
     });
 
@@ -82,8 +106,12 @@ describe('Scene View controller', () => {
         );
         expect(source).toContain("import { canCommitPassForChat } from '../../state/pass-affinity.js'");
         expect(fn).toContain('const passChatId = runtimeState.currentChatId');
+        expect(fn).toContain('const memoAtStart = s.currentMemo');
         expect(fn.indexOf('await buildImmersionSceneState')).toBeGreaterThan(-1);
         expect(fn.indexOf('canCommitPassForChat(passChatId, runtimeState.currentChatId)')).toBeGreaterThan(
+            fn.indexOf('await buildImmersionSceneState'),
+        );
+        expect(fn.indexOf("getSettings().currentMemo")).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
         expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(

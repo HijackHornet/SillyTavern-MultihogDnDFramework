@@ -138,10 +138,20 @@ export function createSceneViewController({
             // Pin before lorebook await — a mid-refresh chat switch must not
             // render the departing chat's scene or queue Real-Time gen into the
             // arriving chat (runRealtimeSceneArtCheck has the same guard).
+            //
+            // onChatChanged flips runtimeState.currentChatId and kicks an
+            // "instant" manifest/immersion refresh BEFORE loadChatState replaces
+            // the live memo. Chat-id affinity alone then passes (id is already
+            // the arriving chat) while buildImmersionSceneState still captured
+            // the departing memo — which queued Real-Time location art into the
+            // wrong chat. Abort when the live memo was swapped mid-await; the
+            // post-loadChatState refresh will rebuild from the arriving partition.
             const passChatId = runtimeState.currentChatId;
+            const memoAtStart = s.currentMemo;
             try {
-                const scene = await buildImmersionSceneState(s.currentMemo, s);
+                const scene = await buildImmersionSceneState(memoAtStart, s);
                 if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
+                if ((memoAtStart || '') !== (getSettings().currentMemo || '')) return;
                 runtimeState.hasActiveDungeonMap = !!scene.dungeonMap;
                 maybeAutoGenerateImmersionSceneArt(scene, () => { void runtimeState.refreshImmersionView(); });
                 syncAgentImmersionUi();
@@ -167,6 +177,7 @@ export function createSceneViewController({
                 bindImmersionViewEvents(scene);
             } catch (err) {
                 if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
+                if ((memoAtStart || '') !== (getSettings().currentMemo || '')) return;
                 console.error('[RPG Tracker] runtimeState.refreshImmersionView failed:', err);
                 runtimeState.hasActiveDungeonMap = false;
                 syncAgentImmersionUi();

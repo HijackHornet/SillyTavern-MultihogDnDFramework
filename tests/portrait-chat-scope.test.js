@@ -139,8 +139,12 @@ describe('per-chat portrait ownership', () => {
         );
         expect(immersionSource).toContain("import { canCommitPassForChat } from './src/state/pass-affinity.js'");
         expect(fn).toContain('const passChatId = getActiveChatId()');
+        expect(fn).toContain('const memoAtStart = s.currentMemo');
         expect(fn.indexOf('await buildImmersionSceneState')).toBeGreaterThan(fn.indexOf('const passChatId'));
         expect(fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())')).toBeGreaterThan(
+            fn.indexOf('await buildImmersionSceneState'),
+        );
+        expect(fn.indexOf("getSettings().currentMemo")).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
         expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(
