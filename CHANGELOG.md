@@ -2,6 +2,11 @@
 
 All notable changes to the **Multihog D&D Framework** will be documented in this file.
 
+## [2026.8.85] - 2026-09-09
+
+### Fixed
+- Scene View / Real-Time location-art refreshes abort when `onChatChanged` flips the chat id before `loadChatState` replaces the live memo, so a mid-switch immersion build cannot queue the departing chat's location image into the arriving chat.
+
 ## [2026.8.84] - 2026-09-08
 
 ### Fixed
