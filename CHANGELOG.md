@@ -2,6 +2,12 @@
 
 All notable changes to the **Multihog D&D Framework** will be documented in this file.
 
+## [2026.8.86] - 2026-09-10
+
+### Fixed
+- Narrator-regex relationship updates retain chat ownership across lorebook NPC resolve and stop writing friendship/affection deltas into another chat after a switch.
+- Late regex and agent rollback work stops before starting another rollback or updating the arriving chat's scheduler.
+
 ## [2026.8.85] - 2026-09-09
 
 ### Fixed

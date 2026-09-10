@@ -64,4 +64,24 @@ describe('State Tracker chat-switch affinity', () => {
         );
         expect(indexSource).toContain("relResult?.status === 'chat_changed'");
     });
+
+    it('guards narrator-regex relationship applies against a post-await chat switch', () => {
+        const handlerIdx = narrativeSource.indexOf('export async function handleRelationshipSwipeChange');
+        expect(handlerIdx).toBeGreaterThanOrEqual(0);
+        const handlerSlice = narrativeSource.slice(handlerIdx, handlerIdx + 2500);
+        expect(handlerSlice).toContain('const passChatId = runtimeState.currentChatId;');
+        expect(handlerSlice).toContain(
+            'await applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx, { passChatId })',
+        );
+        expect(handlerSlice).toContain('persistRelationshipCommandChanges(ctx, settings, passChatId)');
+
+        const regexIdx = narrativeSource.indexOf('async function applyNarrativeRelationshipRegex');
+        expect(regexIdx).toBeGreaterThanOrEqual(0);
+        const regexSlice = narrativeSource.slice(regexIdx, regexIdx + 4500);
+        expect(regexSlice).toContain('options.passChatId ?? runtimeState.currentChatId');
+        expect(regexSlice).toContain('persistRelationshipCommandChanges(ctx, settings, passChatId)');
+        expect(regexSlice).toMatch(
+            /await fuzzyResolveNpcName\([\s\S]*?canCommitPassForChat\(passChatId, runtimeState\.currentChatId\)/,
+        );
+    });
 });
