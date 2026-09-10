@@ -1942,6 +1942,9 @@ export async function handleRelationshipSwipeChange() {
         return;
     }
 
+    // Pin before any await — swipe agent rollback and regex NPC resolve can outlive a chat switch.
+    const passChatId = runtimeState.currentChatId;
+
     // Find the last AI message
     let lastAiMsg = null;
     for (let i = chat.length - 1; i >= 0; i--) {
@@ -1956,7 +1959,7 @@ export async function handleRelationshipSwipeChange() {
     }
 
     if (getRelationshipUpdateMode(settings) === RELATIONSHIP_UPDATE_MODES.REGEX) {
-        await applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx);
+        await applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx, { passChatId });
         await maybeRollbackAgentsForSwipe(lastAiMsg);
         return;
     }
@@ -1967,7 +1970,10 @@ export async function handleRelationshipSwipeChange() {
         ? applyRelationshipSwipeRollback(lastAiMsg, settings)
         : { anyChanged: false };
     await maybeRollbackAgentsForSwipe(lastAiMsg);
-    if (relSwipeResult.anyChanged) persistRelationshipCommandChanges(ctx, settings);
+    if (relSwipeResult.anyChanged
+        && canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+        persistRelationshipCommandChanges(ctx, settings, passChatId);
+    }
     return;
 
     /*
@@ -2130,11 +2136,21 @@ export async function handleRelationshipSwipeChange() {
 /**
  * Original narrator annotation path: parse relationship deltas directly from
  * the newest AI message and apply them to the code-owned NPC relationship data.
+ * @param {object} [options]
+ * @param {string|null} [options.passChatId] Chat id captured when the pass started.
  */
-async function applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx) {
+async function applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx, options = {}) {
+    const passChatId = options.passChatId ?? runtimeState.currentChatId;
+    if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+        return;
+    }
+
     const swipeResult = applyRelationshipSwipeRollback(lastAiMsg, settings);
     if (swipeResult.bailEarly) {
-        if (swipeResult.anyChanged) persistRelationshipCommandChanges(ctx, settings);
+        if (swipeResult.anyChanged
+            && canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+            persistRelationshipCommandChanges(ctx, settings, passChatId);
+        }
         return;
     }
 
@@ -2148,6 +2164,9 @@ async function applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx) {
     let anyChanged = swipeResult.anyChanged;
 
     while ((match = relRegex.exec(text)) !== null) {
+        if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+            return;
+        }
         const field = match[1].toLowerCase();
         const npc = match[2].trim();
         const delta = parseInt(match[3], 10);
@@ -2156,6 +2175,11 @@ async function applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx) {
         if (lastAiMsg.extra.rpgProcessedTags[swipeId].includes(rawTag)) continue;
 
         const resolvedId = await fuzzyResolveNpcName(npc);
+        // fuzzyResolve awaits the lorebook manifest — a chat switch can project
+        // another partition into the shared settings object during that gap.
+        if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+            return;
+        }
         if (!resolvedId) continue;
         if (!settings.npcRelationshipValues) settings.npcRelationshipValues = {};
         if (!settings.npcRelationshipValues[resolvedId]) settings.npcRelationshipValues[resolvedId] = { friendship: 0, affection: 0 };
@@ -2180,7 +2204,12 @@ async function applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx) {
         anyChanged = true;
     }
 
-    if (anyChanged) persistRelationshipCommandChanges(ctx, settings);
+    if (anyChanged) {
+        if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) {
+            return;
+        }
+        persistRelationshipCommandChanges(ctx, settings, passChatId);
+    }
 }
 
 /**
