@@ -1853,6 +1853,7 @@ function applyRelationshipSwipeRollback(lastAiMsg, settings) {
  * @param {any} msg - The last AI message, as resolved by the caller.
  */
 async function maybeRollbackRouterPassForSwipe(msg) {
+    const passChatId = runtimeState.currentChatId;
     if (!msg?.extra || msg.extra.rpgRouterRanForSwipe === undefined) return;
 
     const currentSwipeId = msg.swipe_id ?? 0;
@@ -1893,6 +1894,7 @@ async function maybeRollbackRouterPassForSwipe(msg) {
     console.log(`[RPG Tracker] Lorebook Agent pass was based on abandoned swipe ${msg.extra.rpgRouterRanForSwipe}→${currentSwipeId}; rolling back and re-priming run-every.`);
     recordSchedulerEvent('la_swipe_rollback_attempt', { historyIndex, runId, fromSwipe: msg.extra.rpgRouterRanForSwipe, toSwipe: currentSwipeId });
     const ok = await rollbackRouterPass(historyIndex);
+    if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
     if (ok) {
         clearRouterSwipeMarkers(msg);
         const primeTo = Math.max(0, (settings.routerRunEvery || 1) - 1);
@@ -1905,7 +1907,10 @@ async function maybeRollbackRouterPassForSwipe(msg) {
 }
 
 async function maybeRollbackAgentsForSwipe(msg, { lorebook = true } = {}) {
+    const passChatId = runtimeState.currentChatId;
+    if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
     const mapRolled = await maybeRollbackMapUpdaterForSwipe(msg);
+    if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
     if (mapRolled) {
         const primeTo = Math.max(0, (getSettings().mapUpdaterRunEvery || 1) - 1);
         setMapUpdaterAutoTick(primeTo, 'swipe_map_updater_rollback_prime');
@@ -1913,6 +1918,7 @@ async function maybeRollbackAgentsForSwipe(msg, { lorebook = true } = {}) {
         // Occupancy snapshots earlier in the same turn; restoring evolution after
         // occupancy rollback would undo that occupancy restore.
         await maybeRollbackMapEvolutionForSwipe(msg);
+        if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
     }
     if (lorebook) await maybeRollbackRouterPassForSwipe(msg);
 }
@@ -1960,6 +1966,7 @@ export async function handleRelationshipSwipeChange() {
 
     if (getRelationshipUpdateMode(settings) === RELATIONSHIP_UPDATE_MODES.REGEX) {
         await applyNarrativeRelationshipRegex(lastAiMsg, settings, ctx, { passChatId });
+        if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
         await maybeRollbackAgentsForSwipe(lastAiMsg);
         return;
     }
