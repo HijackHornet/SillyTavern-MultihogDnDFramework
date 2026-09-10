@@ -144,7 +144,7 @@ describe('per-chat portrait ownership', () => {
         expect(fn.indexOf('canCommitPassForChat(passChatId, getActiveChatId())')).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
-        expect(fn.indexOf("getSettings().currentMemo")).toBeGreaterThan(
+        expect(fn.indexOf("canUseSceneMemo(getSettings(), passChatId, memoAtStart)")).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
         expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(

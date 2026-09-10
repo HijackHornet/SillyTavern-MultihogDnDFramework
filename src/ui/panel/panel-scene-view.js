@@ -1,5 +1,6 @@
 import { runtimeState } from '../../app/runtime-state.js';
 import { canCommitPassForChat } from '../../state/pass-affinity.js';
+import { canUseSceneMemo } from '../../state/scene-affinity.js';
 import { isLocationMappingEnabled } from '../../state/section-enabled.js';
 import {
     bindDungeonMapEmbedEvents,
@@ -148,10 +149,11 @@ export function createSceneViewController({
             // post-loadChatState refresh will rebuild from the arriving partition.
             const passChatId = runtimeState.currentChatId;
             const memoAtStart = s.currentMemo;
+            if (!canUseSceneMemo(s, passChatId, memoAtStart)) return;
             try {
                 const scene = await buildImmersionSceneState(memoAtStart, s);
                 if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
-                if ((memoAtStart || '') !== (getSettings().currentMemo || '')) return;
+                if (!canUseSceneMemo(getSettings(), passChatId, memoAtStart)) return;
                 runtimeState.hasActiveDungeonMap = !!scene.dungeonMap;
                 maybeAutoGenerateImmersionSceneArt(scene, () => { void runtimeState.refreshImmersionView(); });
                 syncAgentImmersionUi();
@@ -177,7 +179,7 @@ export function createSceneViewController({
                 bindImmersionViewEvents(scene);
             } catch (err) {
                 if (!canCommitPassForChat(passChatId, runtimeState.currentChatId)) return;
-                if ((memoAtStart || '') !== (getSettings().currentMemo || '')) return;
+                if (!canUseSceneMemo(getSettings(), passChatId, memoAtStart)) return;
                 console.error('[RPG Tracker] runtimeState.refreshImmersionView failed:', err);
                 runtimeState.hasActiveDungeonMap = false;
                 syncAgentImmersionUi();

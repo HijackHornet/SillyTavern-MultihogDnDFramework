@@ -43,6 +43,20 @@ function mountController(settings, extra = {}) {
 }
 
 describe('Scene View controller', () => {
+    it('waits for the arriving projection even when both chats have identical memo text', async () => {
+        runtimeState.currentChatId = 'B';
+        const settings = { chatLinkEnabled: true, chatStateProjectionOwner: 'A', currentMemo: 'same memo' };
+        const build = vi.fn().mockResolvedValue({});
+        const generate = vi.fn();
+        mountController(settings, { buildImmersionSceneState: build, maybeAutoGenerateImmersionSceneArt: generate });
+        await runtimeState.refreshImmersionView();
+        expect(build).not.toHaveBeenCalled();
+        settings.chatStateProjectionOwner = 'B';
+        await runtimeState.refreshImmersionView();
+        expect(build).toHaveBeenCalledTimes(1);
+        expect(generate).toHaveBeenCalledTimes(1);
+    });
+
     it.each(['resolve', 'reject'])('ignores a stale scene %s after switching chats', async outcome => {
         runtimeState.currentChatId = 'A';
         let finish;
@@ -111,7 +125,7 @@ describe('Scene View controller', () => {
         expect(fn.indexOf('canCommitPassForChat(passChatId, runtimeState.currentChatId)')).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
-        expect(fn.indexOf("getSettings().currentMemo")).toBeGreaterThan(
+        expect(fn.indexOf("canUseSceneMemo(getSettings(), passChatId, memoAtStart)")).toBeGreaterThan(
             fn.indexOf('await buildImmersionSceneState'),
         );
         expect(fn.indexOf('maybeAutoGenerateImmersionSceneArt')).toBeGreaterThan(

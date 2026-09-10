@@ -39,6 +39,24 @@ function setLocation(location, chatId = 'chat') {
 }
 
 describe('location background syncing', () => {
+    it('does not apply a background while the arriving chat still has the departing projection', async () => {
+        host.settings.chatLinkEnabled = true;
+        host.settings.chatStateProjectionOwner = 'departing-chat';
+        await buildImmersionSceneState();
+        expect(applyLocationImageToChatBackground).not.toHaveBeenCalled();
+    });
+
+    it('does not apply a background when the memo changes during lorebook loading', async () => {
+        host.settings.currentMemo = 'old memo';
+        const lookup = deferred();
+        isWorldInfoBookKnown.mockReturnValueOnce(lookup.promise);
+        const pending = buildImmersionSceneState();
+        host.settings.currentMemo = 'new memo';
+        lookup.resolve(false);
+        await pending;
+        expect(applyLocationImageToChatBackground).not.toHaveBeenCalled();
+    });
+
     beforeEach(() => {
         vi.resetAllMocks();
         host.settings = { locationImages: true, portraitAutoApplyLocationBackground: true };
