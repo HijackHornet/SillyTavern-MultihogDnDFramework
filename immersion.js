@@ -5,6 +5,7 @@ import { resolvePortraitDisplaySrc, lookupCustomPortraitSrc } from './portrait-s
 import { resolveCurrentLocationPath, formatLocationBreadcrumb } from './location-resolver.js';
 import { isWorldInfoBookKnown, scanRecentOutputForPresentNpcs } from './router.js';
 import { canCommitPassForChat } from './src/state/pass-affinity.js';
+import { canUseSceneMemo } from './src/state/scene-affinity.js';
 import { resolveDungeonMapForLocation, resolveDungeonMapFromHistorySnapshot, stripDungeonMapSection } from './dungeon-reality.js';
 import { buildDungeonMapGraph, renderDungeonMapEmbedHtml } from './dungeon-map-graph.js';
 import { isDungeonMapDetached, isDungeonMapRevealAll } from './src/ui/panel/dungeon-map-panel.js';
@@ -211,6 +212,8 @@ export async function buildImmersionSceneState(memo, settings) {
     const s = settings || getSettings();
     const ctx = SillyTavern.getContext();
     const backgroundChatId = ctx.chatId;
+    const backgroundMemo = memo ?? s.currentMemo;
+    const backgroundMemoCurrent = canUseSceneMemo(s, backgroundChatId, backgroundMemo);
 
     const rawLocationText = getCurrentLocationText(memo ?? s.currentMemo, ctx);
     const prefix = getEffectiveRouterCampaignPrefix(ctx.chatId);
@@ -251,6 +254,8 @@ export async function buildImmersionSceneState(memo, settings) {
     const locationImage = storagePath ? resolveLocationImageWithMeta(storagePath).src : '';
     const liveCtx = SillyTavern.getContext();
     if (backgroundRequest === latestBackgroundSceneRequest
+        && backgroundMemoCurrent
+        && canUseSceneMemo(getSettings(), backgroundChatId, backgroundMemo)
         && backgroundChatId === liveCtx.chatId
         && rawLocationText === getCurrentLocationText(getSettings().currentMemo, liveCtx)) {
         syncCurrentLocationBackground({ locationImage });
@@ -529,10 +534,16 @@ export async function runRealtimeSceneArtCheck() {
     if (!s.locationImages || s.enablePortraits === false) return;
     // Pin before lorebook await — a mid-check chat switch must not stamp visit
     // tracking or queue Real-Time location gen into the arriving chat.
+    // Also snapshot the memo string: onChatChanged can flip chat id first and
+    // only later project the arriving partition, so chat affinity alone is not
+    // enough when the build started against the departing live memo.
     const passChatId = getActiveChatId();
+    const memoAtStart = s.currentMemo;
+    if (!canUseSceneMemo(s, passChatId, memoAtStart)) return;
     try {
-        const scene = await buildImmersionSceneState(s.currentMemo, s);
+        const scene = await buildImmersionSceneState(memoAtStart, s);
         if (!canCommitPassForChat(passChatId, getActiveChatId())) return;
+        if (!canUseSceneMemo(getSettings(), passChatId, memoAtStart)) return;
         maybeAutoGenerateImmersionSceneArt(scene, () => {
             if (typeof globalThis._rpgRefreshImmersionView === 'function') {
                 void globalThis._rpgRefreshImmersionView();

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import { canCommitPassForChat } from '../src/state/pass-affinity.js';
+import { canUseSceneMemo } from '../src/state/scene-affinity.js';
 
 const source = readFileSync(new URL('../src/ui/panel/panel-builder.js', import.meta.url), 'utf8');
 // Execute the production closures with controlled host I/O, without mounting the
@@ -28,7 +29,7 @@ describe('panel import chat ownership', () => {
         const generate = vi.fn();
         const context = createContext({
             getSettings: () => ({ portraitAutoGenerateSceneView: true, locationImages: true }),
-            getActiveChatId: () => chatId, canCommitPassForChat,
+            getActiveChatId: () => chatId, canCommitPassForChat, canUseSceneMemo,
             buildImmersionSceneState: () => gate.promise,
             maybeAutoGenerateImmersionSceneArt: generate, console,
         });
