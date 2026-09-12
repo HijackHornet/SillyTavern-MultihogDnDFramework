@@ -973,7 +973,9 @@ export function registerDiceSlashCommand() {
         name: 'set-state-memo',
         callback: async (args, value) => {
             const settings = getSettings();
+            const passChatId = getActiveChatId();
             const currentMemo = String(settings.currentMemo || '');
+            const historyIndexAtStart = settings.historyIndex;
             const blockId = String(args.block ?? '').trim();
             // Use unnamedArgumentList to preserve multiline and special chars like |
             const unnamedArgs = args.unnamedArgumentList ?? [];
@@ -993,6 +995,13 @@ export function registerDiceSlashCommand() {
                 updatedMemo = content;
             }
 
+            // Capture maps before mutating quests, history, or the live memo.
+            // A chat switch or another editor may finish during this lorebook read.
+            const mapSnapshot = await captureActiveDungeonMapHistory();
+            if (!canCommitPassForChat(passChatId, getActiveChatId())) return 'State memo not updated: active chat changed.';
+            if (String(settings.currentMemo || '') !== currentMemo || settings.historyIndex !== historyIndexAtStart) {
+                return 'State memo not updated: memo or history changed while preparing the update.';
+            }
             updatedMemo = applyQuestSyncAndStripMemo(updatedMemo);
             if (updatedMemo === currentMemo) return 'No changes were made.';
 
@@ -1002,7 +1011,6 @@ export function registerDiceSlashCommand() {
             if (settings.historyIndex !== undefined && settings.historyIndex !== -1) {
                 sliceMemoAndMapHistory(settings, settings.historyIndex);
             }
-            const mapSnapshot = await captureActiveDungeonMapHistory();
             ensureDungeonMapHistory(settings);
             if (settings.memoHistory?.[0] !== currentMemo) {
                 const previousMap = settings.historyIndex === 0
@@ -1022,8 +1030,7 @@ export function registerDiceSlashCommand() {
             settings.prevMemo1 = currentMemo;
             settings.currentMemo = updatedMemo;
             saveSettings();
-            const chatId = getActiveChatId();
-            if (settings.chatLinkEnabled && chatId) saveChatState(chatId);
+            if (settings.chatLinkEnabled) saveChatState(passChatId);
             if (typeof globalThis._rpgUpdateUIMemo === 'function') globalThis._rpgUpdateUIMemo(updatedMemo);
 
             return 'State memo updated.';
